@@ -77,7 +77,7 @@ jobs:
 
       - name: Get Kubernetes files
         run: |
-          kubernetes_files='ls k8s/*.yaml'
+          kubernetes_files='$(ls k8s/*.yaml)'
           
           echo "kubernetes_files=$kubernetes_files" >> "$GITHUB_ENV"
           
