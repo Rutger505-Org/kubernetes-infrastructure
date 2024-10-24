@@ -38,7 +38,6 @@ on:
         description: 'Secret key-value pairs in "key=value" format, separated by commas'
         required: true
 
-
 jobs:
   build-docker-image:
     name: Build and push Docker image
