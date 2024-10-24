@@ -77,12 +77,14 @@ jobs:
 
       - name: Get Kubernetes files
         run: |
-          {
-            echo "kubernetes_files<<EOF"
-            ls k8s/*.yaml
-            echo "EOF"
-          } >> "$GITHUB_ENV"
-          echo ${{ env.kubernetes_files }}
+          kubernetes_files<<EOF"
+          ls k8s/*.yaml
+          echo "EOF"
+#          echo "kubernetes_files=$kubernetes_files" >> "$GITHUB_ENV"
+          $kubernetes_files >> "$GITHUB_ENV"
+          
+#          echo ${{ env.kubernetes_files }}
+          echo $kubernetes_files
 
       - name: Insert environment variables into Kubernetes files
         uses: DominicWatson/github-action-envsubst@v1
