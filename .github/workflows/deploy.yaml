@@ -129,4 +129,4 @@ jobs:
           
           kubectl apply -f k8s/
           
-          kubectl rollout restart deployment/$${{ inputs.deployment_name }}
+          kubectl rollout restart deployment/${{ inputs.deployment_name }}
