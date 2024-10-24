@@ -7,10 +7,6 @@ on:
         description: 'Docker Hub Username'
         required: true
         type: string
-      dockerhub_token:
-        description: 'Docker Hub Token'
-        required: true
-        type: string
       image_name:
         description: 'Docker image with tag'
         required: true
@@ -31,11 +27,16 @@ on:
         description: 'Kubernetes secret name'
         required: true
         type: string
+    secrets:
+      kube_config:
+        description: 'Kubeconfig file'
+        required: true
+      dockerhub_token:
+        description: 'Docker Hub Token'
+        required: true
       secret_literals:
         description: 'Secret key-value pairs in "key=value" format, separated by commas'
         required: true
-        type: string
-
 
 
 jobs:
@@ -51,7 +52,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           username: ${{ inputs.dockerhub_username }}
-          password: ${{ inputs.dockerhub_token }}
+          password: ${{ secrets.dockerhub_token }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -73,7 +74,7 @@ jobs:
       - name: Setup kubectl
         uses: actions-hub/kubectl@master
         env:
-          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+          KUBE_CONFIG: ${{ secrets.kube_config }}
 
       - name: Get Kubernetes files
         run: |
@@ -86,7 +87,7 @@ jobs:
       - name: Insert environment variables into Kubernetes files
         uses: DominicWatson/github-action-envsubst@v1
         with:
-          files: ${{ env.kubernetes_files }}
+          files: ${{ secrets.kube_config }}
         env:
           # TODO get k8s files environment replace
           TAG_NAME: 1.1.2 #${{ github.event.release.tag_name }}
@@ -105,7 +106,7 @@ jobs:
         run: |
           SECRET_LITERALS=""
           
-          for pair in $(echo "${{ inputs.secret_literals }}" | tr ',' '\n'); do
+          for pair in $(echo "${{ secrets.secret_literals }}" | tr ',' '\n'); do
               $SECRET_LITERALS="$SECRET_LITERALS --from-literal=$pair"
           done
           
