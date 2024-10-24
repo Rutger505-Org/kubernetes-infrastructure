@@ -78,9 +78,7 @@ jobs:
       - name: Get Kubernetes files
         run: |
           kubernetes_files=$(ls k8s/*.yaml | tr '\n' ' ')
-          
           echo "kubernetes_files=$kubernetes_files" >> "$GITHUB_ENV"
-          
 
       - name: Insert environment variables into Kubernetes files
         uses: DominicWatson/github-action-envsubst@v1
@@ -105,7 +103,7 @@ jobs:
           SECRET_LITERALS=""
           
           for pair in $(echo "${{ secrets.secret_literals }}" | tr ',' '\n'); do
-              $SECRET_LITERALS="$SECRET_LITERALS --from-literal=$pair"
+              SECRET_LITERALS="$SECRET_LITERALS --from-literal=$pair"
           done
           
           echo "secret_literals=$$SECRET_LITERALS" >> "$GITHUB_ENV"
