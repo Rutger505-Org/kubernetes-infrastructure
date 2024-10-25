@@ -36,7 +36,7 @@ jobs:
 
       - name: Get database k8s files
         run: |
-          git clone https://github.com:Rutger505/kubernetes-infra.git
+          git clone https://github.com/Rutger505/kubernetes-infra.git
           ls -al
 
       - name: Insert database name into Kubernetes files
