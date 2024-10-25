@@ -101,13 +101,9 @@ jobs:
         run: |
           CONFIG_LITERALS=""
           
-          for pair in $(echo "${{ inputs.configmap_literals }}" | tr ',' '\n'); do
-            CONFIG_LITERALS="$CONFIG_LITERALS --from-literal=$pair"
-          done
-          
           while IFS=',' read -ra pairs; do
             for pair in "${pairs[@]}"; do
-                CONFIG_LITERALS="$CONFIG_LITERALS --from-literal=$pair"
+              CONFIG_LITERALS="$CONFIG_LITERALS --from-literal=$pair"
             done
           done <<< "${{ inputs.configmap_literals }}"
           
