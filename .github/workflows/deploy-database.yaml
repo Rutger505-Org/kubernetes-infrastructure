@@ -24,9 +24,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Install kubectl
         uses: Azure/setup-kubectl@v4
         with:
@@ -39,7 +36,7 @@ jobs:
 
       - name: Get database k8s files
         run: |
-          git clone git@github.com:Rutger505/kubernetes-infra.git
+          git clone https://github.com:Rutger505/kubernetes-infra.git
           ls -al
 
       - name: Insert database name into Kubernetes files
