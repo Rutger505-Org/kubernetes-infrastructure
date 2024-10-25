@@ -34,7 +34,9 @@ jobs:
 
       - name: test ls
         run: |
-          ls -la
+          ls -la $GITHUB_WORKSPACE
+          ls -la $GITHUB_WORKSPACE/k8s  
+
 
       - name: Configure kubectl
         run: |
