@@ -43,31 +43,31 @@ on:
         required: true
 
 jobs:
-  build-docker-image:
-    name: Build and push Docker image
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ inputs.dockerhub_username }}
-          password: ${{ secrets.dockerhub_token }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          tags: ${{ inputs.image_name }}
-          push: true
+  #  build-docker-image:
+  #    name: Build and push Docker image
+  #    runs-on: ubuntu-latest
+  #
+  #    steps:
+  #      - name: Checkout code
+  #        uses: actions/checkout@v4
+  #
+  #      - name: Login to Docker Hub
+  #        uses: docker/login-action@v3
+  #        with:
+  #          username: ${{ inputs.dockerhub_username }}
+  #          password: ${{ secrets.dockerhub_token }}
+  #
+  #      - name: Build and push Docker image
+  #        uses: docker/build-push-action@v6
+  #        with:
+  #          context: .
+  #          tags: ${{ inputs.image_name }}
+  #          push: true
 
   deploy:
     name: Deploy to Kubernetes
     runs-on: ubuntu-latest
-    needs: build-docker-image
+    #    needs: build-docker-image
 
     steps:
       - name: Checkout code
@@ -105,15 +105,23 @@ jobs:
             CONFIG_LITERALS="$CONFIG_LITERALS --from-literal=$pair"
           done
           
+          while IFS=',' read -ra pairs; do
+            for pair in "${pairs[@]}"; do
+                CONFIG_LITERALS="$CONFIG_LITERALS --from-literal=$pair"
+            done
+          done <<< "${{ inputs.configmap_literals }}"
+          
           echo "config_literals=$CONFIG_LITERALS" >> "$GITHUB_ENV"
 
       - name: Parse Secret literals
         run: |
           SECRET_LITERALS=""
           
-          for pair in $(echo "${{ secrets.secret_literals }}" | tr ',' '\n'); do
-              SECRET_LITERALS="$SECRET_LITERALS --from-literal=$pair"
-          done
+          while IFS=',' read -ra pairs; do
+            for pair in "${pairs[@]}"; do
+                SECRET_LITERALS="$SECRET_LITERALS --from-literal=$pair"
+            done
+          done <<< "${{ secrets.secret_literals }}"
           
           echo "secret_literals=$SECRET_LITERALS" >> "$GITHUB_ENV"
 
