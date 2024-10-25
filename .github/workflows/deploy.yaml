@@ -33,7 +33,7 @@ on:
         type: string
     secrets:
       kube_config:
-        description: 'Kubeconfig file'
+        description: 'Kube config file'
         required: true
       dockerhub_token:
         description: 'Docker Hub Token'
@@ -115,7 +115,7 @@ jobs:
               SECRET_LITERALS="$SECRET_LITERALS --from-literal=$pair"
           done
           
-          echo "secret_literals=$$SECRET_LITERALS" >> "$GITHUB_ENV"
+          echo "secret_literals=$SECRET_LITERALS" >> "$GITHUB_ENV"
 
       - name: Deploy to Kubernetes
         run: |
@@ -126,7 +126,7 @@ jobs:
           
           kubectl create secret generic \
             ${{ inputs.secret_name }} \
-            ${{ env.config_literals }} \
+            ${{ env.secret_literals }} \
             --dry-run=client -o yaml | kubectl apply -f -
           
           kubectl apply -f k8s/
