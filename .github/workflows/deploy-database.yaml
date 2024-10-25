@@ -32,16 +32,15 @@ jobs:
         with:
           version: 'v1.30.0'
 
-      - name: test ls
-        run: |
-          ls -la $GITHUB_WORKSPACE
-          ls -la $GITHUB_WORKSPACE/k8s  
-
-
       - name: Configure kubectl
         run: |
           mkdir -p ~/.kube
           echo "${{ secrets.kube_config }}" | base64 --decode > ~/.kube/config
+
+      - name: Get database k8s files
+        run: |
+          git clone git@github.com:Rutger505/kubernetes-infra.git
+          ls -al
 
       - name: Insert database name into Kubernetes files
         run: |
