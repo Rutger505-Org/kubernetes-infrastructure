@@ -99,7 +99,6 @@ jobs:
 
       - name: Parse ConfigMap and Secret literals
         run: |
-          # Function to parse literals and store them in an environment variable
           parse_literals() {
             local input="$1"
             local var_name="$2"
