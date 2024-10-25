@@ -33,7 +33,7 @@ on:
         type: string
     secrets:
       kube_config:
-        description: 'Kube config file'
+        description: 'Kube config file in base64'
         required: true
       dockerhub_token:
         description: 'Docker Hub Token'
