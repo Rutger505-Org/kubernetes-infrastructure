@@ -20,7 +20,7 @@ on:
         required: true
         type: string
       configmap_literals:
-        description: 'ConfigMap key-value pairs in "key=value" format, separated by commas'
+        description: ConfigMap key-value pairs in key=value (key='value containing spaces')" format, separated by commas
         required: true
         type: string
       secret_name:
@@ -39,7 +39,7 @@ on:
         description: 'Docker Hub Token'
         required: true
       secret_literals:
-        description: 'Secret key-value pairs in "key=value" format, separated by commas'
+        description: Secret key-value pairs in key=value (key='value containing spaces') format, separated by commas
         required: true
 
 jobs:
@@ -97,25 +97,27 @@ jobs:
             mv /tmp/envsubst $FILE || exit 1
           done
 
-      - name: Parse ConfigMap literals
+      - name: Parse ConfigMap and Secret literals
         run: |
-          CONFIG_LITERALS=""
+          parse_literals() {
+            local input="$1"
+            local var_name="$2"
+            local result=""
           
-          for pair in $(echo "${{ inputs.configmap_literals }}" | tr ',' '\n'); do
-            CONFIG_LITERALS="$CONFIG_LITERALS --from-literal=$pair"
-          done
+            while IFS=',' read -ra pairs; do
+              for pair in "${pairs[@]}"; do
+                result="$result --from-literal=$pair"
+              done
+            done <<< "$input"
           
-          echo "config_literals=$CONFIG_LITERALS" >> "$GITHUB_ENV"
-
-      - name: Parse Secret literals
-        run: |
-          SECRET_LITERALS=""
+            printf -v "$var_name" '%s' "$result"
+          }
           
-          for pair in $(echo "${{ secrets.secret_literals }}" | tr ',' '\n'); do
-              SECRET_LITERALS="$SECRET_LITERALS --from-literal=$pair"
-          done
+          parse_literals "${{ inputs.configmap_literals }}" "config_literals"
+          echo "config_literals=$config_literals" >> "$GITHUB_ENV"
           
-          echo "secret_literals=$SECRET_LITERALS" >> "$GITHUB_ENV"
+          parse_literals "${{ secrets.secret_literals }}" "secret_literals"
+          echo "secret_literals=$secret_literals" >> "$GITHUB_ENV"
 
       - name: Deploy to Kubernetes
         run: |
