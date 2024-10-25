@@ -20,7 +20,7 @@ on:
         required: true
         type: string
       configmap_literals:
-        description: 'ConfigMap key-value pairs in key=value (key='value containing spaces')" format, separated by commas'
+        description: ConfigMap key-value pairs in key=value (key='value containing spaces')" format, separated by commas
         required: true
         type: string
       secret_name:
@@ -39,7 +39,7 @@ on:
         description: 'Docker Hub Token'
         required: true
       secret_literals:
-        description: 'Secret key-value pairs in key=value (key='value containing spaces') format, separated by commas'
+        description: Secret key-value pairs in key=value (key='value containing spaces') format, separated by commas
         required: true
 
 jobs:
