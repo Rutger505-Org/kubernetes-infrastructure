@@ -42,6 +42,11 @@ jobs:
 
       - name: Insert database name into Kubernetes files
         run: |
+          ls -al
+          
+          apt install tree
+          tree
+          
           export DATABASE_NAME="${{ inputs.database }}"
           FILE=k8s/deployment.yaml
           
