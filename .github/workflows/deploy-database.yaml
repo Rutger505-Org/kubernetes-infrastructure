@@ -61,7 +61,7 @@ jobs:
             kubectl create secret generic $secret_name \
               --from-literal=PGUSER=${{ secrets.POSTGRES_USER }} \
               --from-literal=POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
-              --from-literal=PGPASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+              --from-literal=PGPASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
               --from-literal=POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             echo "Secret '$secret_name' created."
           fi
