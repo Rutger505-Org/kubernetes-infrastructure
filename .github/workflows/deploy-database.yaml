@@ -62,9 +62,9 @@ jobs:
               echo "$type '$name' already exists, skipping creation."
             else
               if [ $type == "secret" ]; then
-                kubectl create $type generic $name --from-literal=POSTGRES
+                kubectl create $type generic $name ${literals[@]}
               else
-                kubectl create $type $name "${literals[@]}"
+                kubectl create $type $name ${literals[@]}
               fi
           
               echo "$type '$name' created."
