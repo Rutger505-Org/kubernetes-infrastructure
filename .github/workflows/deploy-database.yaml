@@ -44,7 +44,6 @@ jobs:
 
       - name: Insert database name into Kubernetes files
         run: |
-          export DATABASE_NAME="${{ inputs.database }}"
           FILE=k8s/deployment.yaml
           
           envsubst < $FILE > /tmp/envsubst || exit 1
@@ -72,7 +71,7 @@ jobs:
           create_key_value_configuration configmap postgres-configmap \
               --from-literal=PGUSER="${{ secrets.POSTGRES_USER }}" \
               --from-literal=POSTGRES_USER="${{ secrets.POSTGRES_USER }}" \
-              --from-literal=PGDATABASE="${DATABASE_NAME}"
+              --from-literal=PGDATABASE="${{ inputs.database }}"
           
           create_key_value_configuration secret postgres-secret \
               --from-literal=PGPASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
