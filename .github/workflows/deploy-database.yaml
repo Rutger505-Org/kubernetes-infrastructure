@@ -65,3 +65,5 @@ jobs:
           fi
           
           kubectl apply -f k8s/
+          
+          kubectl rollout restart deployment/postgres-deployment
