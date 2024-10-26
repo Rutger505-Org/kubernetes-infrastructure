@@ -53,18 +53,30 @@ jobs:
 
       - name: Apply Kubernetes manifests
         run: |
-          secret_name=postgres-secret
+          create_key_value_configuration() {
+            local type=$1
+            local name=$2
+            shift 2
+            local literals=("$@")
+
+            if kubectl get $type $name; then
+              echo "$type '$name' already exists, skipping creation."
+            else
+              kubectl create $type $name "${literals[@]}"
+              echo "$type '$name' created."
+            fi
+          }
           
-          if kubectl get secret $secret_name; then
-            echo "Secret '$secret_name' already exists, skipping creation."
-          else
-            kubectl create secret generic $secret_name \
-              --from-literal=PGUSER=${{ secrets.POSTGRES_USER }} \
-              --from-literal=POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
-              --from-literal=PGPASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
-              --from-literal=POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-            echo "Secret '$secret_name' created."
-          fi
+          # test if PG<name> and are necessary
+          
+          create_key_value_configuration configmap postgres-configmap \
+              --from-literal=PGUSER="${{ secrets.POSTGRES_USER }}" \
+              --from-literal=POSTGRES_USER="${{ secrets.POSTGRES_USER }}" \
+              --from-literal=PGDATABASE="${DATABASE_NAME}"
+          
+          create_key_value_configuration secret postgres-secret \
+              --from-literal=PGPASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
+              --from-literal=POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
           
           kubectl apply -f k8s/
           

@@ -33,13 +33,7 @@ spec:
                   done;
 
                   echo 'PostgreSQL started.';
-
-                  export PGPASSWORD=\"$POSTGRES_PASSWORD\"
-                  export PGUSER=\"$POSTGRES_USER\"
                   
-                  echo $PGUSER
-                  echo $PGPASSWORD
-
                   DB_EXISTS=$(psql -tc \"SELECT 1 FROM pg_database WHERE datname = '$POSTGRES_DB'\")
                   if [ \"$DB_EXISTS\" != \"1\" ]; then
                     echo 'Database $POSTGRES_DB does not exist. Creating it...';
