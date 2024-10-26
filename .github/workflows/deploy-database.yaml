@@ -32,7 +32,7 @@ jobs:
       - name: Configure kubectl
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.kube_config }}" | base64 --decode > ~/.kube/config
+          echo "${{ secrets.kubeconfig }}" | base64 --decode > ~/.kube/config
 
       - name: Get kubernetes files
         uses: actions/checkout@v4
