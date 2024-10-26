@@ -39,6 +39,8 @@ jobs:
         with:
           repository: Rutger505/kubernetes-infra
           fetch-depth: 0  # Fetch all history for all branches
+          # TODO
+          ref: add-database-deploy
 
       - name: Insert database name into Kubernetes files
         run: |
