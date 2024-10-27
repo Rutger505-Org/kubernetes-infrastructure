@@ -52,35 +52,29 @@ jobs:
 
       - name: Apply Kubernetes manifests
         run: |
-          create_key_value_configuration() {
-            local type=$1
-            local name=$2
-            shift 3
-            local literals=("$@")
-
-            if kubectl get $type $name; then
-              echo "$type '$name' already exists, skipping creation."
-            else
-              if [ $type == "secret" ]; then
-                kubectl create $type generic $name ${literals[@]}
-              else
-                kubectl create $type $name ${literals[@]}
-              fi
+          secret_name=postgres-secret
+          configmap_name=postgres-configmap
           
-              echo "$type '$name' created."
-            fi
-          }
+          if kubectl get secret $secret_name; then
+            echo "secret $secret_name already exists, skipping creation."
+          else
+            kubectl create secret generic $secret_name \
+              --from-literal=PGPASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
+              --from-literal=POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
           
-          # test if PG<name> and are necessary
+            echo "secret '$name' created."
+          fi
           
-          create_key_value_configuration configmap postgres-configmap \
+          if kubectl get configmap $configmap_name; then
+              echo "configmap $configmap_name already exists, skipping creation."
+          else
+              kubectl create configmap $configmap_name \
               --from-literal=PGUSER="${{ secrets.POSTGRES_USER }}" \
               --from-literal=POSTGRES_USER="${{ secrets.POSTGRES_USER }}" \
               --from-literal=PGDATABASE="${{ inputs.database }}"
           
-          create_key_value_configuration secret postgres-secret \
-              --from-literal=PGPASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
-              --from-literal=POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
+              echo "configmap '$name' created."
+          fi
           
           kubectl apply -f k8s/
           
