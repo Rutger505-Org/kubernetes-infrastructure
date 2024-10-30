@@ -41,9 +41,8 @@ jobs:
           if [ -f postgres/deploy/secret.yaml ]; then
             yq --version
             SECRET_NAME=$(yq '.metadata.name' postgres/deploy/secret.yaml)
-            echo "Secret name found: $SECRET_NAME"
-      
-            if ! kubectl get secret $SECRET_NAME -n postgres &>/dev/null; then
+          
+            if kubectl get secret $SECRET_NAME 2>&1 | grep -q "not found"; then
               echo "Secret $SECRET_NAME does not exist, leaving file for deploy step"
             else
               echo "Secret $SECRET_NAME already exists, removing file"
