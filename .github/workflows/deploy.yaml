@@ -15,6 +15,10 @@ jobs:
     name: Deploy to Kubernetes
     runs-on: ubuntu-latest
 
+    env:
+      ENVIRONMENT: ${{ vars.ENVIRONMENT }}
+      NAMESPACE: postgres-${{ vars.ENVIRONMENT }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -36,20 +40,6 @@ jobs:
         with:
           version: "4.44.2"
 
-      - name: Check if secret already exists
-        run: |
-          if [ -f postgres/deploy/secret.yaml ]; then
-            yq --version
-            SECRET_NAME=$(yq '.metadata.name' postgres/deploy/secret.yaml)
-          
-            if kubectl get secret $SECRET_NAME 2>&1 | grep -q "not found"; then
-              echo "Secret $SECRET_NAME does not exist, leaving file for deploy step"
-            else
-              echo "Secret $SECRET_NAME already exists, removing file"
-              rm postgres/deploy/secret.yaml
-            fi
-          fi
-
       - name: Insert environment variables into Kubernetes files
         run: |
           FILES=$(ls postgres/deploy/*.yaml | tr '\n' ' ')
@@ -66,8 +56,32 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           TAG_NAME: ${{ github.ref_name }}
 
+      - name: Check if secret already exists
+        run: |
+          if [ -f postgres/deploy/secret.yaml ]; then
+            SECRET_NAME=$(yq '.metadata.name' postgres/deploy/secret.yaml)
+            SECRET_NAMESPACE=$(yq '.metadata.namespace' postgres/deploy/secret.yaml)
+
+            if kubectl get secret $SECRET_NAME -n $SECRET_NAMESPACE 2>&1 | grep -q "not found"; then
+              echo "Secret $SECRET_NAME does not exist in namespace $SECRET_NAMESPACE, leaving file for deploy step"
+            else
+              echo "Secret $SECRET_NAME already exists in namespace $SECRET_NAMESPACE, removing file"
+              rm postgres/deploy/secret.yaml
+            fi
+          fi
+
+      - name: Create namespace if not exists
+        run: |
+          if ! kubectl get namespace $NAMESPACE &> /dev/null; then
+            echo "Namespace $NAMESPACE does not exist, creating it"
+            kubectl create namespace $NAMESPACE
+          else
+            echo "Namespace $NAMESPACE already exists"
+          fi
+
       - name: Deploy to Kubernetes
         uses: Azure/k8s-deploy@v5
         with:
+          namespace: ${{ env.NAMESPACE }}
           manifests: |
             postgres/deploy/
