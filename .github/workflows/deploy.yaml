@@ -38,22 +38,22 @@ jobs:
 
       - name: Check if secret already exists
         run: |
-          if [ -f k8s/postgres/secret.yaml ]; then
+          if [ -f postgres/deploy/secret.yaml ]; then
             yq --version
-            SECRET_NAME=$(yq '.metadata.name' k8s/postgres/secret.yaml)
+            SECRET_NAME=$(yq '.metadata.name' postgres/deploy/secret.yaml)
             echo "Secret name found: $SECRET_NAME"
       
             if ! kubectl get secret $SECRET_NAME -n postgres &>/dev/null; then
               echo "Secret $SECRET_NAME does not exist, leaving file for deploy step"
             else
               echo "Secret $SECRET_NAME already exists, removing file"
-              rm k8s/postgres/secret.yaml
+              rm postgres/deploy/secret.yaml
             fi
           fi
 
       - name: Insert environment variables into Kubernetes files
         run: |
-          FILES=$(ls k8s/postgres/*.yaml | tr '\n' ' ')
+          FILES=$(ls postgres/deploy/*.yaml | tr '\n' ' ')
           
           for FILE in $FILES; do
             echo "Processing $FILE"
@@ -71,4 +71,4 @@ jobs:
         uses: Azure/k8s-deploy@v5
         with:
           manifests: |
-            k8s/postgres/
+            postgres/deploy/
