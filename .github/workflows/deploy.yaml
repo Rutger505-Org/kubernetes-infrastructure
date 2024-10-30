@@ -26,6 +26,26 @@ jobs:
           method: kubeconfig
           kubeconfig: ${{ secrets.KUBECONFIG }}
 
+      - name: Install yq
+        uses: Makepad-fr/setup-yq-action@v1.0.0
+        with:
+          version: "4.44.2"
+
+      - name: Check if secret already exists
+        run: |
+          if [ -f k8s/postgres/secret.yaml ]; then
+            yq --version
+            SECRET_NAME=$(yq '.metadata.name' k8s/postgres/secret.yaml)
+            echo "Secret name found: $SECRET_NAME"
+      
+            if ! kubectl get secret $SECRET_NAME -n postgres &>/dev/null; then
+              echo "Secret $SECRET_NAME does not exist, leaving file for deploy step"
+            else
+              echo "Secret $SECRET_NAME already exists, removing file"
+              rm k8s/postgres/secret.yaml
+            fi
+          fi
+
       - name: Insert environment variables into Kubernetes files
         run: |
           FILES=$(ls k8s/postgres/*.yaml | tr '\n' ' ')
