@@ -31,8 +31,8 @@ jobs:
           sudo apt-get update &&
             sudo apt-get install -y gettext-base
           
-          wget https://github.com/mikefarah/yq/releases/v4/download/yq_linux_amd64 -O /usr/bin/yq &&
-            chmod +x /usr/bin/yq
+          sudo wget https://github.com/mikefarah/yq/releases/v4/download/yq_linux_amd64 -O /usr/bin/yq &&
+            sudo chmod +x /usr/bin/yq
           
       - name: Generate deployment config
         id: config
