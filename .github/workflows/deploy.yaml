@@ -5,16 +5,30 @@ on:
     tags:
       - '*'
 
+env:
+  APP_NAME: postgres
+  POSTGRES_VERSION: 17
+
 jobs:
   deploy-postgres-to-kubernetes:
     name: Deploy to Kubernetes
     runs-on: ubuntu-latest
-
-    env:
-      ENVIRONMENT: ${{ vars.ENVIRONMENT }}
-      NAMESPACE: postgres-${{ vars.ENVIRONMENT }}
+    strategy:
+      matrix:
+        environment: [ production, test ]
+    environment: ${{ matrix.environment }}
 
     steps:
+      - name: Test
+        run: |
+          echo "Environment: ${{ matrix.environment }}"
+          echo "APP_NAME: ${{ env.APP_NAME }}"
+          echo "POSTGRES_VERSION: ${{ env.POSTGRES_VERSION }}"
+          echo "GITHUB_REF: ${{ github.ref }}"
+          echo "GITHUB_REF_NAME: ${{ github.ref_name }}"
+          echo "TEST_VAR: ${{ vars.TEST_VAR }}"
+          exit 1
+
       - uses: actions/checkout@v4
 
       - name: Install envsubst
