@@ -80,9 +80,9 @@ jobs:
             SECRET_NAMESPACE=$(yq '.metadata.namespace' postgres/deploy/secret.yaml)
 
             if kubectl get secret $SECRET_NAME -n $SECRET_NAMESPACE 2>&1 | grep -q "not found"; then
-              echo "Secret $SECRET_NAME does not exist in namespace $SECRET_NAMESPACE, leaving file for deploy step"
+              echo "Secret $SECRET_NAME does not exist in namespace $SECRET_NAMESPACE, leaving file for deployment step"
             else
-              echo "Secret $SECRET_NAME already exists in namespace $SECRET_NAMESPACE, removing file"
+              echo "Secret $SECRET_NAME already exists in namespace $SECRET_NAMESPACE, removing file to prevent re-creation"
               rm postgres/deploy/secret.yaml
             fi
           else
