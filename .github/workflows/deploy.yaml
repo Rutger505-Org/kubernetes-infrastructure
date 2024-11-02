@@ -24,20 +24,24 @@ jobs:
     environment: ${{ matrix.environment }}
 
     steps:
-      - name: Test
-        run: |
-          echo "Environment: ${{ matrix.environment }}"
-          echo "APP_NAME: ${{ env.APP_NAME }}"
-          echo "POSTGRES_VERSION: ${{ env.POSTGRES_VERSION }}"
-          echo "GITHUB_REF: ${{ github.ref }}"
-          echo "GITHUB_REF_NAME: ${{ github.ref_name }}"
-          echo "TEST_VAR: ${{ vars.TEST_VAR }}"
-          exit 1
-
       - uses: actions/checkout@v4
 
-      - name: Install envsubst
-        run: sudo apt-get update && sudo apt-get install -y gettext-base
+      - name: Install envsubst and yq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gettext-base yq
+          
+      - name: Generate deployment config
+        id: config
+        run: |
+          NAMESPACE=$APP_NAME-${{ matrix.environment }}
+          echo "Setting namespace to NAMESPACE"
+          echo "namespace=$NAMESPACE" >> $GITHUB_OUTPUT
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.31.0'
 
       - uses: azure/setup-kubectl@v4
         with:
@@ -49,30 +53,25 @@ jobs:
           method: kubeconfig
           kubeconfig: ${{ secrets.KUBECONFIG }}
 
-      - name: Install yq
-        uses: Makepad-fr/setup-yq-action@v1.0.0
-        with:
-          version: "4.44.2"
-
       - name: Insert environment variables into Kubernetes files
+        env:
+          ENVIRONMENT: ${{ matrix.environment }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
           FILES=$(ls postgres/deploy/*.yaml | tr '\n' ' ')
           
           for FILE in $FILES; do
             echo "Processing $FILE"
-          
             envsubst < $FILE > /tmp/envsubst || exit 1
-          
             mv /tmp/envsubst $FILE || exit 1
           done
-        env:
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          TAG_NAME: ${{ github.ref_name }}
 
-      - name: Check if secret already exists
+      - name: Prevent secret re-creation
         run: |
-          if [ -f postgres/deploy/secret.yaml ]; then
+          SECRET_PATH=postgres/deploy/secret.yaml
+          
+          if [ -f $SECRET_PATH ]; then
             SECRET_NAME=$(yq '.metadata.name' postgres/deploy/secret.yaml)
             SECRET_NAMESPACE=$(yq '.metadata.namespace' postgres/deploy/secret.yaml)
 
@@ -82,12 +81,14 @@ jobs:
               echo "Secret $SECRET_NAME already exists in namespace $SECRET_NAMESPACE, removing file"
               rm postgres/deploy/secret.yaml
             fi
+          else
+            echo "No secret file found at $SECRET_PATH. Skipping check."
           fi
 
       - name: Deploy to Kubernetes
         uses: Azure/k8s-deploy@v5
         with:
-          namespace: ${{ env.NAMESPACE }}
+          namespace: ${{ steps.config.outputs.namespace }}
           manifests: |
             postgres/deploy/namespace.yaml
             postgres/deploy/
