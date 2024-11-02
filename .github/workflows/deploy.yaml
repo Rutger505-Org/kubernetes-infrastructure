@@ -42,10 +42,6 @@ jobs:
         with:
           version: 'v1.31.0'
 
-      - uses: azure/setup-kubectl@v4
-        with:
-          version: 'v1.31.0'
-
       - name: Kubernetes Set Context
         uses: Azure/k8s-set-context@v4.0.1
         with:
@@ -109,10 +105,6 @@ jobs:
         with:
           version: 'v1.31.0'
 
-      - uses: azure/setup-kubectl@v4
-        with:
-          version: 'v1.31.0'
-
       - name: Kubernetes Set Context
         uses: Azure/k8s-set-context@v4.0.1
         with:
@@ -136,4 +128,3 @@ jobs:
         with:
           manifests: |
             cert-manager/deploy/
-            
