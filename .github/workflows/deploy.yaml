@@ -42,10 +42,6 @@ jobs:
         with:
           version: 'v1.31.0'
 
-      - uses: azure/setup-kubectl@v4
-        with:
-          version: 'v1.31.0'
-
       - name: Kubernetes Set Context
         uses: Azure/k8s-set-context@v4.0.1
         with:
@@ -91,3 +87,44 @@ jobs:
           manifests: |
             postgres/deploy/namespace.yaml
             postgres/deploy/
+
+  deploy-cert-manager-to-kubernetes:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install envsubst
+        run: |
+          sudo apt-get update &&
+            sudo apt-get install -y gettext-base
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.31.0'
+
+      - name: Kubernetes Set Context
+        uses: Azure/k8s-set-context@v4.0.1
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+
+      - name: Insert environment variables into Kubernetes files
+        env:
+          CERT_EMAIL: ${{ vars.CERT_EMAIL }}
+        run: |
+          FILES=$(ls cert-manager/deploy/*.yaml | tr '\n' ' ')
+          
+          for FILE in $FILES; do
+            echo "Processing $FILE"
+            envsubst < $FILE > /tmp/envsubst || exit 1
+            mv /tmp/envsubst $FILE || exit 1
+          done
+
+      - name: Deploy to Kubernetes
+        uses: Azure/k8s-deploy@v5
+        with:
+          manifests: |
+            cert-manager/deploy/
