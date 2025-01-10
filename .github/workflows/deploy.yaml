@@ -116,7 +116,7 @@ jobs:
           CERT_EMAIL: ${{ vars.CERT_EMAIL }}
           BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
         run: |
-          FILES=$(ls cert-manager/deploy/*.yaml | tr '\n' ' ')
+          FILES=$(ls cert-manager/deploy/*.yaml postgres/deploy/*.yaml | tr '\n' ' ')
           
           for FILE in $FILES; do
             echo "Processing $FILE"
