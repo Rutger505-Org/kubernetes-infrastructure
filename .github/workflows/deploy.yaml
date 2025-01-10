@@ -53,6 +53,7 @@ jobs:
           ENVIRONMENT: ${{ matrix.environment }}
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
         run: |
           FILES=$(ls postgres/deploy/*.yaml | tr '\n' ' ')
           
@@ -114,9 +115,8 @@ jobs:
       - name: Insert environment variables into Kubernetes files
         env:
           CERT_EMAIL: ${{ vars.CERT_EMAIL }}
-          BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
         run: |
-          FILES=$(ls cert-manager/deploy/*.yaml postgres/deploy/*.yaml | tr '\n' ' ')
+          FILES=$(ls cert-manager/deploy/*.yaml | tr '\n' ' ')
           
           for FILE in $FILES; do
             echo "Processing $FILE"
