@@ -114,6 +114,7 @@ jobs:
       - name: Insert environment variables into Kubernetes files
         env:
           CERT_EMAIL: ${{ vars.CERT_EMAIL }}
+          BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
         run: |
           FILES=$(ls cert-manager/deploy/*.yaml | tr '\n' ' ')
           
