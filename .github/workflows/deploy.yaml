@@ -1,9 +1,6 @@
 name: Deploy
 
-on:
-  push:
-    tags:
-      - '*'
+on: [push]
 
 env:
   APP_NAME: postgres
