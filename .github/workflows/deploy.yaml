@@ -31,7 +31,7 @@ jobs:
         id: config
         run: |
           NAMESPACE=$APP_NAME-${{ matrix.environment }}
-          echo "Setting namespace to NAMESPACE"
+          echo "Setting namespace to $NAMESPACE"
           echo "namespace=$NAMESPACE" >> $GITHUB_OUTPUT
 
       - name: Set up kubectl
@@ -85,7 +85,6 @@ jobs:
           manifests: |
             legacy-postgres/deploy/namespace.yaml
             legacy-postgres/deploy/
-
 
   deploy-postgres-to-kubernetes:
     name: Deploy to Kubernetes
