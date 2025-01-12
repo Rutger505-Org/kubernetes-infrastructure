@@ -18,14 +18,30 @@ spec:
           image: postgres:17-alpine
           ports:
             - containerPort: 5432
-              hostPort: 5432
           envFrom:
             - secretRef:
                 name: postgres-secret
           volumeMounts:
             - name: postgres-storage
               mountPath: /var/lib/postgresql/data
+            - name: postgres-certs
+              mountPath: /etc/postgresql/ssl/
+              readOnly: true
+          env:
+            - name: POSTGRES_INITDB_ARGS
+              value: "--data-checksums"
+          args:
+            - -c
+            - ssl=on
+            - -c
+            - ssl_cert_file=/etc/postgresql/ssl/tls.crt
+            - -c
+            - ssl_key_file=/etc/postgresql/ssl/tls.key
       volumes:
         - name: postgres-storage
           persistentVolumeClaim:
             claimName: postgres-pvc
+        - name: postgres-certs
+          secret:
+            secretName: postgres-tls
+            defaultMode: 0600

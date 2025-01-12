@@ -1,0 +1,16 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: postgres-tcp-route
+  namespace: postgres
+spec:
+  entryPoints:
+    - postgres # You need to define this entrypoint in Traefik's configuration
+  routes:
+    - match: HostSNI(`postgres.rutgerpronk.com`)
+      services:
+        - name: postgres-service
+          port: 5432
+  tls:
+    secretName: postgres-tls
+    passthrough: false
