@@ -116,8 +116,7 @@ jobs:
 
       - name: Insert environment variables into Kubernetes files
         env:
-          ENVIRONMENT: ${{ matrix.environment }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USERNAME }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
         run: |
