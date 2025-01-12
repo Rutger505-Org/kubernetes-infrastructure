@@ -52,7 +52,7 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
         run: |
-          FILES=$(ls postgres/deploy/*.yaml | tr '\n' ' ')
+          FILES=$(ls legacy-postgres/deploy/*.yaml | tr '\n' ' ')
           
           for FILE in $FILES; do
             echo "Processing $FILE"
