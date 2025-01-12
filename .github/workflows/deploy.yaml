@@ -83,8 +83,8 @@ jobs:
         with:
           namespace: ${{ steps.config.outputs.namespace }}
           manifests: |
-            postgres/deploy/namespace.yaml
-            postgres/deploy/
+            legacy-postgres/deploy/namespace.yaml
+            legacy-postgres/deploy/
 
 
   deploy-postgres-to-kubernetes:
@@ -151,7 +151,6 @@ jobs:
         with:
           namespace: postgres
           manifests: |
-            postgres/deploy/namespace.yaml
             postgres/deploy/
 
   deploy-cert-manager-to-kubernetes:
