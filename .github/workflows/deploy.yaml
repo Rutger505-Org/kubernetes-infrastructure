@@ -150,7 +150,7 @@ jobs:
       - name: Deploy to Kubernetes
         uses: Azure/k8s-deploy@v5
         with:
-          namespace: ${{ steps.config.outputs.namespace }}
+          namespace: postgres
           manifests: |
             postgres/deploy/namespace.yaml
             postgres/deploy/
