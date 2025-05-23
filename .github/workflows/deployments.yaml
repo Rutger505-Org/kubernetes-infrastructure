@@ -1,0 +1,29 @@
+name: Deployments
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  apply-to-kubernetes:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Kubernetes
+        uses: ./.github/actions/setup-kubernetes
+        with:
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+
+      - name: OpenTofu Apply
+        working-directory: ./deploy
+        env:
+          TF_VAR_cert_email: ${{ vars.CERT_EMAIL }}
+        run: |
+          tofu init
+          tofu apply -input=false -auto-approve
+
