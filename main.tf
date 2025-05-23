@@ -1,6 +1,10 @@
+provider "kubernetes" {
+  config_path = "~/.kube/config"
+}
+
 provider "helm" {
   kubernetes {
-    config_path = "~/.kube/config"  # or use other authentication methods
+    config_path = "~/.kube/config"
   }
 }
 
@@ -10,7 +14,7 @@ resource "helm_release" "cert_manager" {
   chart            = "cert-manager"
   namespace        = "cert-manager"
   create_namespace = true
-  version          = "v1.13.3"  # Specify the version you want
+  version          = "v1.17.2"
 
   set {
     name  = "installCRDs"
