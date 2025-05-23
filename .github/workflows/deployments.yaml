@@ -19,7 +19,14 @@ jobs:
         with:
           kubeconfig: ${{ secrets.KUBECONFIG }}
 
-      - name: OpenTofu Apply
+      - name: OpenTofu Apply Cert Manager
+        working-directory: ./0-cert-manager
+        run: |
+          tofu init
+          tofu apply -input=false -auto-approve
+
+      - name: OpenTofu Apply Cluster Issuers
+        working-directory: ./0-cluster-issuers
         env:
           TF_VAR_cert_email: ${{ vars.CERT_EMAIL }}
         run: |
