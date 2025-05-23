@@ -20,7 +20,6 @@ jobs:
           kubeconfig: ${{ secrets.KUBECONFIG }}
 
       - name: OpenTofu Apply
-        working-directory: ./deploy
         env:
           TF_VAR_cert_email: ${{ vars.CERT_EMAIL }}
         run: |
