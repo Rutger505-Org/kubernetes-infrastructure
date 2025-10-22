@@ -2,7 +2,24 @@ name: Deployments
 
 on:
   workflow_call:
-    secrets: inherit
+    secrets:
+      KUBECONFIG:
+        required: true
+      DOCKERHUB_USERNAME:
+        required: true
+      DOCKERHUB_TOKEN:
+        required: true
+      AUTH_SECRET:
+        required: true
+      AUTH_EMAIL_HOST:
+        required: true
+      AUTH_EMAIL_PORT:
+        required: true
+      AUTH_EMAIL_USER:
+        required: true
+      AUTH_EMAIL_PASSWORD:
+        required: true
+
     inputs:
       with:
         required: false
