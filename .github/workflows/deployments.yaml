@@ -144,7 +144,7 @@ jobs:
             );
 
       - name: OpenTofu Apply
-        working-directory: ./infrastructure/deploy
+        working-directory: ./deploy
         env:
           TF_VAR_application_name: ${{ needs.configure.outputs.application_name }}
           TF_VAR_image: ${{ needs.configure.outputs.image }}
