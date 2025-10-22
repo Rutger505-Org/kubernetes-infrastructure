@@ -20,12 +20,6 @@ on:
       AUTH_EMAIL_PASSWORD:
         required: true
 
-    inputs:
-      with:
-        required: false
-        type: string
-        default: ""
-
 jobs:
   configure:
     name: Generate Configuration
