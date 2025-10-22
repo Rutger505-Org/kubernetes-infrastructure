@@ -3,6 +3,11 @@ name: Deployments
 on:
   workflow_call:
     secrets: inherit
+    inputs:
+      with:
+        required: false
+        type: string
+        default: ""
 
 jobs:
   configure:
