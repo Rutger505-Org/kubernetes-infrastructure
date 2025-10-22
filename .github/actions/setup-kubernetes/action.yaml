@@ -20,7 +20,7 @@ runs:
         tofu_wrapper: "false"
 
     - name: Configure Kubeconfig
-      uses: ./.github/actions/utils/with-post-step
+      uses: ./.github/actions/with-post-step
       with:
         main: |
           echo "Creating setting kubeconfig in ~/.kube/config"
