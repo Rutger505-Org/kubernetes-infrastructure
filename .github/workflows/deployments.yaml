@@ -1,0 +1,163 @@
+name: Deployments
+
+on:
+  workflow_call:
+    secrets: inherit
+
+jobs:
+  configure:
+    name: Generate Configuration
+    runs-on: ubuntu-latest
+    outputs:
+      application_name: ${{ steps.config.outputs.application_name }}
+      environment: ${{ steps.config.outputs.environment }}
+      is_production: ${{ steps.config.outputs.is_production }}
+      image: ${{ steps.config.outputs.image }}
+      hostname: ${{ steps.config.outputs.hostname }}
+      certificate_issuer: ${{ steps.config.outputs.certificate_issuer }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configuration
+        id: config
+        uses: actions/github-script@v7
+        env:
+          BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
+          APPLICATION_NAME: ${{ vars.APPLICATION_NAME }}
+          IMAGE_REPOSITORY: ${{ vars.IMAGE_REPOSITORY }}
+        with:
+          script: |
+            const { default: generateConfig } = await import('${{ github.workspace }}/.github/scripts/deployment/config.mjs');
+
+            return await generateConfig({ core, context });
+
+  build-docker-image:
+    if: github.event.action != 'closed'
+    name: Build Docker image
+    needs: [configure]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ needs.configure.outputs.image }}
+          cache-from: |
+            type=gha,scope=${{ github.ref_name }}
+            type=gha,scope=development
+            type=gha,scope=main
+          cache-to: |
+            type=gha,mode=max,scope=${{ github.ref_name }}
+            ${{ startsWith(github.ref, 'refs/tags/') && 'type=gha,mode=max,scope=main' || '' }}
+
+  deploy-to-kubernetes:
+    if: github.event.action != 'closed'
+    name: Deploy to Kubernetes
+    needs: [configure, build-docker-image]
+    runs-on: ubuntu-latest
+
+    environment:
+      name: ${{ needs.configure.outputs.environment }}
+      url: https://${{ needs.configure.outputs.hostname }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Kubernetes
+        uses: ./.github/actions/setup-kubernetes
+        with:
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+
+      - name: Generate deployment environment variables
+        id: env
+        uses: actions/github-script@v8
+        env:
+          SECRETS: ${{ toJSON(secrets) }}
+          VARS: ${{ toJSON(vars) }}
+        with:
+          script: |
+            const { default: generateDeploymentEnvironment } = await import('${{ github.workspace }}/.github/scripts/deployment/deployment-variables.mjs');
+            return await generateDeploymentEnvironment(
+              core,
+              {
+                filterPrefix: 'DEPLOYMENT_',
+                unfilteredVars: JSON.parse(process.env.VARS),
+                vars: {
+                  AUTH_URL: "https://${{ needs.configure.outputs.hostname }}/api/auth",
+                },
+
+                unfilteredSecrets: JSON.parse(process.env.SECRETS),
+                secrets: {
+                  AUTH_SECRET: "${{ secrets.AUTH_SECRET }}",
+                  AUTH_EMAIL_FROM: "${{ vars.AUTH_EMAIL_FROM_NAME }} <${{ secrets.AUTH_EMAIL_USER }}>",
+                  AUTH_EMAIL_HOST: "${{ secrets.AUTH_EMAIL_HOST }}",
+                  AUTH_EMAIL_PORT: "${{ secrets.AUTH_EMAIL_PORT }}",
+                  AUTH_EMAIL_USER: "${{ secrets.AUTH_EMAIL_USER }}",
+                  AUTH_EMAIL_PASSWORD: "${{ secrets.AUTH_EMAIL_PASSWORD }}",
+                },
+              },
+            );
+
+      - name: OpenTofu Apply
+        working-directory: ./deploy
+        env:
+          TF_VAR_application_name: ${{ needs.configure.outputs.application_name }}
+          TF_VAR_image: ${{ needs.configure.outputs.image }}
+          TF_VAR_hostname: ${{ needs.configure.outputs.hostname }}
+          TF_VAR_certificate_issuer: ${{ needs.configure.outputs.certificate_issuer }}
+          TF_VAR_config: ${{ steps.env.outputs.vars }}
+          TF_VAR_secrets: ${{ steps.env.outputs.secrets }}
+        run: |
+          tofu init
+          tofu workspace select -or-create ${{ needs.configure.outputs.environment }}
+          tofu apply -input=false -auto-approve
+
+  destroy-pr-environment:
+    if: github.event.action == 'closed'
+      && needs.configure.outputs.is_production == 'false'
+      && contains(needs.configure.outputs.environment, 'pr-')
+    name: Destroy PR Environment
+    needs: [configure]
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ needs.configure.outputs.environment }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Kubernetes
+        uses: ./.github/actions/setup-kubernetes
+        with:
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+
+      - name: OpenTofu Destroy
+        working-directory: ./deploy
+        env:
+          TF_VAR_application_name: ${{ needs.configure.outputs.application_name }}
+          TF_VAR_image: ${{ needs.configure.outputs.image }}
+          TF_VAR_hostname: ${{ needs.configure.outputs.hostname }}
+          TF_VAR_certificate_issuer: ${{ needs.configure.outputs.certificate_issuer }}
+        run: |
+          tofu init
+          tofu workspace select ${{ needs.configure.outputs.environment }}
+          tofu apply -input=false -auto-approve -destroy
+          tofu workspace select default
+          tofu workspace delete ${{ needs.configure.outputs.environment }}
