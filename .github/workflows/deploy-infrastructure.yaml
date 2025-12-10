@@ -33,3 +33,11 @@ jobs:
           tofu init
           tofu apply -input=false -auto-approve
 
+      - name: OpenTofu Apply MetalLB
+        working-directory: ./2-metallb
+        env:
+          TF_VAR_ip_addresses: ${{ vars.METALLB_IP_ADDRESSES }}
+        run: |
+          tofu init
+          tofu apply -input=false -auto-approve
+
