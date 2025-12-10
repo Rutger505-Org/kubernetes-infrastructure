@@ -37,6 +37,7 @@ jobs:
         working-directory: ./2-metallb
         env:
           TF_VAR_ip_addresses: ${{ vars.METALLB_IP_ADDRESSES }}
+          TF_VAR_traefik_ip: ${{ vars.TRAEFIK_IP }}
         run: |
           tofu init
           tofu apply -input=false -auto-approve

@@ -68,3 +68,17 @@ resource "kubernetes_manifest" "l2_advertisement" {
 
   depends_on = [helm_release.metallb]
 }
+
+resource "kubernetes_service_patch" "traefik" {
+  metadata {
+    name      = "traefik"
+    namespace = "kube-system"
+  }
+
+  spec {
+    type             = "LoadBalancer"
+    load_balancer_ip = var.traefik_ip
+  }
+
+  depends_on = [kubernetes_manifest.ip_address_pool]
+}

@@ -3,3 +3,8 @@ variable "ip_addresses" {
   type        = list(string)
   default     = ["192.168.1.230-192.168.1.250"]
 }
+
+variable "traefik_ip" {
+  description = "Static IP address to assign to the Traefik LoadBalancer service"
+  type        = string
+}
