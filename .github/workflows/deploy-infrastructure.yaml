@@ -63,4 +63,3 @@ jobs:
         run: |
           tofu init
           tofu apply -input=false -auto-approve
-
