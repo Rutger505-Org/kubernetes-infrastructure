@@ -49,21 +49,20 @@ resource "helm_release" "pihole" {
         storageClassName = "local-path"
       }
 
-      service = {
+      serviceWeb = {
         type           = "LoadBalancer"
-        port           = 80
         loadBalancerIP = var.pihole_web_ip
         annotations = {
           "metallb.universe.tf/ip-allocated-from-pool" = "default"
         }
       }
 
-      dnsService = {
+      serviceDns = {
         type           = "LoadBalancer"
-        port           = 53
         loadBalancerIP = var.pihole_dns_ip
         annotations = {
           "metallb.universe.tf/ip-allocated-from-pool" = "default"
+          "metallb.universe.tf/allow-shared-ip"        = "pihole-dns"
         }
       }
 
