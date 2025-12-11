@@ -54,7 +54,7 @@ resource "helm_release" "pihole" {
         port           = 80
         loadBalancerIP = var.pihole_web_ip
         annotations = {
-          "metallb.universe.tf/address-pool" = "default"
+          "metallb.universe.tf/ip-allocated-from-pool" = "default"
         }
       }
 
@@ -63,7 +63,7 @@ resource "helm_release" "pihole" {
         port           = 53
         loadBalancerIP = var.pihole_dns_ip
         annotations = {
-          "metallb.universe.tf/address-pool" = "default"
+          "metallb.universe.tf/ip-allocated-from-pool" = "default"
         }
       }
 
