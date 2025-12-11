@@ -48,3 +48,13 @@ jobs:
           tofu init
           tofu apply -input=false -auto-approve
 
+      - name: OpenTofu Apply Pi-hole
+        working-directory: ./3-pihole
+        env:
+          TF_VAR_pihole_web_ip: ${{ vars.PIHOLE_WEB_IP }}
+          TF_VAR_pihole_dns_ip: ${{ vars.PIHOLE_DNS_IP }}
+          TF_VAR_admin_password: ${{ secrets.PIHOLE_ADMIN_PASSWORD }}
+        run: |
+          tofu init
+          tofu apply -input=false -auto-approve
+
