@@ -41,7 +41,7 @@ resource "helm_release" "pihole" {
 
   values = [
     yamlencode({
-      replicaCount = 3
+      replicaCount = 2
 
       persistentVolumeClaim = {
         enabled          = true
