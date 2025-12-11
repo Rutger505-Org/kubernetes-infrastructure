@@ -83,9 +83,9 @@ resource "helm_release" "pihole" {
         "https://v.firebog.net/hosts/Easylist.txt",
         # Prigent Ads - French ads blocking list
         "https://v.firebog.net/hosts/Prigent-Ads.txt",
-        # Malicious URLs - Malware protection
+        # Prigent Malware - Malware protection
         "https://v.firebog.net/hosts/Prigent-Malware.txt",
-        # Phishing URLs - Phishing protection
+        # Prigent Phishing - Phishing protection
         "https://v.firebog.net/hosts/Prigent-Phishing.txt",
       ]
     })
