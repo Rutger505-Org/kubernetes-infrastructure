@@ -26,6 +26,8 @@ provider "helm" {
   }
 }
 
+# MetalLB Helm chart installation
+# Configuration (IPAddressPool, L2Advertisement) is in 3-metallb-config folder
 resource "helm_release" "metallb" {
   name             = "metallb"
   repository       = "https://metallb.github.io/metallb"
@@ -37,48 +39,3 @@ resource "helm_release" "metallb" {
   wait = true
 }
 
-resource "kubernetes_manifest" "ip_address_pool" {
-  manifest = {
-    apiVersion = "metallb.io/v1beta1"
-    kind       = "IPAddressPool"
-    metadata = {
-      name      = "default"
-      namespace = "metallb-system"
-    }
-    spec = {
-      addresses = var.ip_addresses
-    }
-  }
-
-  depends_on = [helm_release.metallb]
-}
-
-resource "kubernetes_manifest" "l2_advertisement" {
-  manifest = {
-    apiVersion = "metallb.io/v1beta1"
-    kind       = "L2Advertisement"
-    metadata = {
-      name      = "default"
-      namespace = "metallb-system"
-    }
-    spec = {
-      ipAddressPools = ["default"]
-    }
-  }
-
-  depends_on = [helm_release.metallb]
-}
-
-resource "kubernetes_service_patch" "traefik" {
-  metadata {
-    name      = "traefik"
-    namespace = "kube-system"
-  }
-
-  spec {
-    type             = "LoadBalancer"
-    load_balancer_ip = var.traefik_ip
-  }
-
-  depends_on = [kubernetes_manifest.ip_address_pool]
-}
