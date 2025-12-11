@@ -71,6 +71,23 @@ resource "helm_release" "pihole" {
       }
 
       adminPassword = var.admin_password
+
+      adlists = [
+        # StevenBlack's Unified hosts - Popular unified hosts file with ads, malware, and trackers
+        "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts",
+        # AdGuard DNS filter - Comprehensive ad blocking list
+        "https://v.firebog.net/hosts/AdguardDns.txt",
+        # Admiral - Anti-adblock adlist
+        "https://v.firebog.net/hosts/Admiral.txt",
+        # EasyList - Primary ad blocking list
+        "https://v.firebog.net/hosts/Easylist.txt",
+        # Prigent Ads - French ads blocking list
+        "https://v.firebog.net/hosts/Prigent-Ads.txt",
+        # Malicious URLs - Malware protection
+        "https://v.firebog.net/hosts/Prigent-Malware.txt",
+        # Phishing URLs - Phishing protection
+        "https://v.firebog.net/hosts/Prigent-Phishing.txt",
+      ]
     })
   ]
 
