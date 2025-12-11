@@ -12,7 +12,7 @@ terraform {
 
   backend "kubernetes" {
     config_path   = "~/.kube/config"
-    secret_suffix = "metallb"
+    secret_suffix = "metallb-config"
   }
 }
 
@@ -27,17 +27,8 @@ provider "helm" {
 }
 
 
-# ########## IMPORTANT: also defined in 3-metallb-config/main.tf #############
-resource "helm_release" "metallb" {
-  name             = "metallb"
-  repository       = "https://metallb.github.io/metallb"
-  chart            = "metallb"
-  namespace        = "metallb-system"
-  create_namespace = true
-  version          = "0.14.9"
-
-  wait = true
-}
+# MetalLB Helm chart is installed in 2-metallb folder
+# This configuration only manages the IPAddressPool and L2Advertisement
 
 resource "kubernetes_manifest" "ip_address_pool" {
   manifest = {
@@ -51,8 +42,6 @@ resource "kubernetes_manifest" "ip_address_pool" {
       addresses = var.ip_addresses
     }
   }
-
-  depends_on = [helm_release.metallb]
 }
 
 resource "kubernetes_manifest" "l2_advertisement" {
@@ -67,8 +56,6 @@ resource "kubernetes_manifest" "l2_advertisement" {
       ipAddressPools = ["default"]
     }
   }
-
-  depends_on = [helm_release.metallb]
 }
 
 resource "null_resource" "traefik_loadbalancer" {

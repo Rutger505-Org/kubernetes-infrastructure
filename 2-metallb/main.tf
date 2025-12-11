@@ -26,7 +26,8 @@ provider "helm" {
   }
 }
 
-# ########## IMPORTANT: also defined in 3-metallb-config/main.tf #############
+# MetalLB Helm chart installation
+# Configuration (IPAddressPool, L2Advertisement) is in 3-metallb-config folder
 resource "helm_release" "metallb" {
   name             = "metallb"
   repository       = "https://metallb.github.io/metallb"
