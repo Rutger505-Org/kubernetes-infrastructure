@@ -49,29 +49,26 @@ resource "helm_release" "pihole" {
 
       serviceWeb = {
         type           = "LoadBalancer"
-        loadBalancerIP = var.pihole_ip
         annotations = {
-          "metallb.universe.tf/ip-allocated-from-pool" = "default"
-          "metallb.universe.tf/allow-shared-ip"        = "pihole-svc"
+          "metallb.io/allow-shared-ip" = "pihole-svc"
+          "metallb.io/loadBalancerIPs" = var.pihole_ip
         }
       }
 
       serviceDns = {
         type           = "LoadBalancer"
-        loadBalancerIP = var.pihole_ip
         annotations = {
-          "metallb.universe.tf/ip-allocated-from-pool" = "default"
-          "metallb.universe.tf/allow-shared-ip"        = "pihole-svc"
+          "metallb.io/allow-shared-ip" = "pihole-svc"
+          "metallb.io/loadBalancerIPs" = var.pihole_ip
         }
       }
 
       serviceDhcp = {
         enabled = true
         type           = "LoadBalancer"
-        loadBalancerIP = var.pihole_ip
         annotations = {
-          "metallb.universe.tf/ip-allocated-from-pool" = "default"
-          "metallb.universe.tf/allow-shared-ip"        = "pihole-svc"
+          "metallb.io/allow-shared-ip" = "pihole-svc"
+          "metallb.io/loadBalancerIPs" = var.pihole_ip
         }
       }
 
