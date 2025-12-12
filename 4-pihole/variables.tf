@@ -1,10 +1,5 @@
-variable "pihole_web_ip" {
-  description = "MetalLB static IP for Pi-hole web UI"
-  type        = string
-}
-
-variable "pihole_dns_ip" {
-  description = "MetalLB static IP for Pi-hole DNS"
+variable "pihole_ip" {
+  description = "MetalLB static IP for Pi-hole services"
   type        = string
 }
 

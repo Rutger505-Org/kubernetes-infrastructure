@@ -37,12 +37,10 @@ resource "helm_release" "pihole" {
   repository = "https://mojo2600.github.io/pihole-kubernetes/"
   chart      = "pihole"
   namespace  = kubernetes_namespace.pihole.metadata[0].name
-  version    = "2.19.0"
+  version    = "2.35.0"
 
   values = [
     yamlencode({
-      replicaCount = 2
-
       persistentVolumeClaim = {
         enabled          = true
         size             = "2Gi"
@@ -51,18 +49,29 @@ resource "helm_release" "pihole" {
 
       serviceWeb = {
         type           = "LoadBalancer"
-        loadBalancerIP = var.pihole_web_ip
+        loadBalancerIP = var.pihole_ip
         annotations = {
           "metallb.universe.tf/ip-allocated-from-pool" = "default"
+          "metallb.universe.tf/allow-shared-ip"        = "pihole-svc"
         }
       }
 
       serviceDns = {
         type           = "LoadBalancer"
-        loadBalancerIP = var.pihole_dns_ip
+        loadBalancerIP = var.pihole_ip
         annotations = {
           "metallb.universe.tf/ip-allocated-from-pool" = "default"
-          "metallb.universe.tf/allow-shared-ip"        = "pihole-dns"
+          "metallb.universe.tf/allow-shared-ip"        = "pihole-svc"
+        }
+      }
+
+      serviceDhcp = {
+        enabled = true
+        type           = "LoadBalancer"
+        loadBalancerIP = var.pihole_ip
+        annotations = {
+          "metallb.universe.tf/ip-allocated-from-pool" = "default"
+          "metallb.universe.tf/allow-shared-ip"        = "pihole-svc"
         }
       }
 
