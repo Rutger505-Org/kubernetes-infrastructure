@@ -6,7 +6,7 @@ terraform {
     }
     helm = {
       source  = "hashicorp/helm"
-      version = "~> 2.12"
+      version = "~> 3.1.1"
     }
   }
 
@@ -21,14 +21,8 @@ provider "kubernetes" {
 }
 
 provider "helm" {
-  kubernetes {
+  kubernetes = {
     config_path = "~/.kube/config"
-  }
-}
-
-resource "kubernetes_namespace" "pihole" {
-  metadata {
-    name = "pihole"
   }
 }
 
@@ -36,8 +30,17 @@ resource "helm_release" "pihole" {
   name       = "pihole"
   repository = "https://mojo2600.github.io/pihole-kubernetes/"
   chart      = "pihole"
-  namespace  = kubernetes_namespace.pihole.metadata[0].name
   version    = "2.35.0"
+
+  namespace        = "pihole"
+  create_namespace = true
+
+  recreate_pods = true
+
+  set_sensitive = [ {
+    name = "adminPassword"
+    value = var.admin_password
+  } ]
 
   values = [
     yamlencode({
@@ -76,9 +79,6 @@ resource "helm_release" "pihole" {
         enabled = false
       }
 
-      adminPassword = var.admin_password
     })
   ]
-
-  depends_on = [kubernetes_namespace.pihole]
 }
