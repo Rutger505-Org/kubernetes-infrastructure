@@ -14,6 +14,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Checkout infrastructure repository
+        uses: actions/checkout@v4
+        with:
+          repository: Rutger505-Org/kubernetes-infrastructure
+          path: infrastructure
+
       - name: Connect to Tailscale
         uses: tailscale/github-action@v2
         with:
@@ -22,7 +28,7 @@ jobs:
           tags: tag:ci
 
       - name: Setup Kubernetes
-        uses: ./.github/actions/setup-kubernetes
+        uses: ./infrastructure/.github/actions/setup-kubernetes
         with:
           kubeconfig: ${{ secrets.KUBECONFIG }}
 
@@ -40,3 +46,26 @@ jobs:
           tofu init
           tofu apply -input=false -auto-approve
 
+      - name: OpenTofu Apply MetalLB
+        working-directory: ./2-metallb
+        run: |
+          tofu init
+          tofu apply -input=false -auto-approve
+
+      - name: OpenTofu Apply MetalLB Config
+        working-directory: ./3-metallb-config
+        env:
+          TF_VAR_ip_addresses: ${{ vars.METALLB_IP_ADDRESSES }}
+          TF_VAR_traefik_ip: ${{ vars.TRAEFIK_IP }}
+        run: |
+          tofu init
+          tofu apply -input=false -auto-approve
+
+      - name: OpenTofu Apply Pi-hole
+        working-directory: ./4-pihole
+        env:
+          TF_VAR_pihole_ip: ${{ vars.PIHOLE_IP }}
+          TF_VAR_admin_password: ${{ secrets.PIHOLE_ADMIN_PASSWORD }}
+        run: |
+          tofu init
+          tofu apply -input=false -auto-approve
