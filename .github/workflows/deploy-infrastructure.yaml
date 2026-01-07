@@ -35,11 +35,9 @@ jobs:
 
       - name: Test tailscale
         run: |
-          ping 192.168.178.201 | true
-          
+          tailscale status
           nmap 192.168.178.0/24 | true
           
-          tailscale status
           
           
           
