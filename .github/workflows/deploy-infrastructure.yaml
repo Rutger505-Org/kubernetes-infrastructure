@@ -2,8 +2,8 @@ name: Deployments
 
 on:
   push:
-    tags:
-      - "*"
+    branches:
+      - main
 
 jobs:
   apply-to-kubernetes:
@@ -32,6 +32,19 @@ jobs:
         uses: ./infrastructure/.github/actions/setup-kubernetes
         with:
           kubeconfig: ${{ secrets.KUBECONFIG }}
+
+      - name: Test tailscale
+        run: |
+          ping 192.168.178.201 | true
+          
+          nmap 192.168.178.0/24 | true
+          
+          tailscale status
+          
+          
+          
+          
+          
 
       - name: OpenTofu Apply Cert Manager
         working-directory: ./0-cert-manager
