@@ -2,9 +2,6 @@ name: Deployments
 
 on:
   workflow_call:
-    vars:
-      DOCKERHUB_USERNAME:
-        required: true
     secrets:
       KUBECONFIG:
         required: true
@@ -43,7 +40,7 @@ jobs:
         env:
           BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
           APPLICATION_NAME: ${{ vars.APPLICATION_NAME }}
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
         with:
           script: |
             const { default: generateConfig } = await import('${{ github.workspace }}/infrastructure/.github/scripts/deployment/config.mjs');
