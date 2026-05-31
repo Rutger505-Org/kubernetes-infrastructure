@@ -67,12 +67,3 @@ jobs:
           tofu init
           tofu apply -input=false -auto-approve
 
-      - name: OpenTofu Apply Pi-hole
-        working-directory: ./4-pihole
-        env:
-          TF_VAR_pihole_ip: ${{ vars.PIHOLE_IP }}
-          TF_VAR_admin_password: ${{ secrets.PIHOLE_ADMIN_PASSWORD }}
-        run: |
-          #tofu init
-          #tofu apply -input=false -auto-approve
-          echo "Skipping tofu"
