@@ -36,7 +36,6 @@ jobs:
       - name: Test tailscale
         run: |
           tailscale status
-          nmap 192.168.178.0/24 | true
 
 
       - name: OpenTofu Apply Cert Manager
@@ -74,5 +73,6 @@ jobs:
           TF_VAR_pihole_ip: ${{ vars.PIHOLE_IP }}
           TF_VAR_admin_password: ${{ secrets.PIHOLE_ADMIN_PASSWORD }}
         run: |
-          tofu init
-          tofu apply -input=false -auto-approve
+          #tofu init
+          #tofu apply -input=false -auto-approve
+          echo "Skipping tofu"
