@@ -37,12 +37,7 @@ jobs:
         run: |
           tailscale status
           nmap 192.168.178.0/24 | true
-          
-          
-          
-          
-          
-          
+
 
       - name: OpenTofu Apply Cert Manager
         working-directory: ./0-cert-manager
