@@ -2,14 +2,15 @@ name: Deployments
 
 on:
   workflow_call:
+    vars:
+      DOCKERHUB_USERNAME:
+        required: true
     secrets:
       KUBECONFIG:
         required: true
       TAILSCALE_OAUTH_CLIENT_ID:
         required: true
       TAILSCALE_OAUTH_SECRET:
-        required: true
-      DOCKERHUB_USERNAME:
         required: true
       DOCKERHUB_TOKEN:
         required: true
@@ -65,7 +66,7 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push Docker image
