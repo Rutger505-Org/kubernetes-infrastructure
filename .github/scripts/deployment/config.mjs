@@ -3,7 +3,7 @@
 /**
  * @typedef {Object} ConfigValues
  * @property {string} APPLICATION_NAME
- * @property {string} IMAGE_REPOSITORY
+ * @property {string} DOCKERHUB_USERNAME
  */
 
 /**
@@ -12,11 +12,11 @@
  */
 
 /**
- * @returns {{ applicationName: string, imageRepository: string }}
+ * @returns {{ applicationName: string, dockerhubUsername: string }}
  */
 function validateApplicationConfig() {
   /** @type {Array<keyof ConfigValues>} */
-  const requiredEnvVars = ["APPLICATION_NAME", "IMAGE_REPOSITORY"];
+  const requiredEnvVars = ["APPLICATION_NAME", "DOCKERHUB_USERNAME"];
 
   /** @type {ConfigValues} */
   const envVars = /** @type {any} */ (process.env);
@@ -33,7 +33,7 @@ function validateApplicationConfig() {
 
   return {
     applicationName: envVars.APPLICATION_NAME,
-    imageRepository: envVars.IMAGE_REPOSITORY,
+    dockerhubUsername: envVars.DOCKERHUB_USERNAME,
   };
 }
 
@@ -44,7 +44,7 @@ function validateApplicationConfig() {
  */
 export default async function generateConfig({ context, core }) {
   try {
-    const { applicationName, imageRepository } = validateApplicationConfig();
+    const { applicationName, dockerhubUsername } = validateApplicationConfig();
 
     const isTag = context.ref.startsWith("refs/tags/");
     const tag = isTag ? context.ref.replace("refs/tags/", "") : undefined;
@@ -55,7 +55,7 @@ export default async function generateConfig({ context, core }) {
         ? "production"
         : `pr-${context.payload.pull_request.number}`,
       is_production: isTag ? "true" : "false",
-      image: `${imageRepository}:${isTag ? tag : context.sha}`,
+      image: `${dockerhubUsername}/${applicationName}:${isTag ? tag : context.sha}`,
       hostname: isTag
         ? process.env.BASE_DOMAIN
         : `${context.sha}.${process.env.BASE_DOMAIN}`,

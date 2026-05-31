@@ -42,7 +42,7 @@ jobs:
         env:
           BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
           APPLICATION_NAME: ${{ vars.APPLICATION_NAME }}
-          IMAGE_REPOSITORY: ${{ vars.IMAGE_REPOSITORY }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         with:
           script: |
             const { default: generateConfig } = await import('${{ github.workspace }}/infrastructure/.github/scripts/deployment/config.mjs');
