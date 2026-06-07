@@ -67,3 +67,13 @@ jobs:
           tofu init
           tofu apply -input=false -auto-approve
 
+      - name: OpenTofu Apply LiveKit
+        working-directory: ./4-livekit
+        env:
+          TF_VAR_base_domain: ${{ vars.BASE_DOMAIN }}
+          TF_VAR_api_key: ${{ secrets.LIVEKIT_API_KEY }}
+          TF_VAR_api_secret: ${{ secrets.LIVEKIT_API_SECRET }}
+        run: |
+          tofu init
+          tofu apply -input=false -auto-approve
+
