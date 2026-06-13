@@ -67,3 +67,9 @@ jobs:
           tofu init
           tofu apply -input=false -auto-approve
 
+      - name: OpenTofu Apply RBAC
+        working-directory: ./5-rbac
+        run: |
+          tofu init
+          tofu apply -input=false -auto-approve
+
