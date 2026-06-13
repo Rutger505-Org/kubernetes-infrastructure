@@ -187,8 +187,12 @@ jobs:
           TF_VAR_hostname: ${{ needs.configure.outputs.hostname }}
           TF_VAR_certificate_issuer: ${{ needs.configure.outputs.certificate_issuer }}
         run: |
+          environment="${{ needs.configure.outputs.environment }}"
           tofu init
-          tofu workspace select ${{ needs.configure.outputs.environment }}
+          if ! tofu workspace select "$environment" 2>/dev/null; then
+            echo "Workspace \"$environment\" does not exist; nothing to destroy."
+            exit 0
+          fi
           tofu apply -input=false -auto-approve -destroy
           tofu workspace select default
-          tofu workspace delete ${{ needs.configure.outputs.environment }}
+          tofu workspace delete "$environment"
