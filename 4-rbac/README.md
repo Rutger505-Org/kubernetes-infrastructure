@@ -5,7 +5,7 @@ Read-only RBAC for debugging deployments without exposing secrets, exposed as a
 
 It creates:
 
-- a `readonly` namespace (anchors the service account, holds no workloads),
+- a `read-only-access` namespace (anchors the service account, holds no workloads),
 - a `readonly` service account,
 - a `log-reader` **ClusterRole** granting `get/list/watch` on `pods`,
   `pods/log`, `events`, `deployments` and `replicasets` across **all**
@@ -43,12 +43,3 @@ No re-apply is needed — `tofu output` just reads the state CI already wrote.
 That file is a normal, **non-expiring** kubeconfig — keep it like your admin one,
 hand it to whoever (or whatever agent) needs to debug. It can read pods/logs/
 events cluster-wide and nothing else.
-
-## Security notes
-
-- The token does **not** expire. To revoke it, delete the `readonly-token`
-  secret (and re-apply to mint a fresh one) — that immediately invalidates any
-  kubeconfig built from it.
-- `pods/log` is granted cluster-wide. The role can't read `secrets`, but
-  application logs can still contain sensitive data an app chose to log. That's
-  inherent to log access, not specific to this setup.

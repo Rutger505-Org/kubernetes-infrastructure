@@ -16,15 +16,12 @@ provider "kubernetes" {
   config_path = "~/.kube/config"
 }
 
-# Dedicated namespace that holds read-only debug service accounts. No
-# workloads or secrets live here; it only exists to anchor the accounts.
 resource "kubernetes_namespace" "readonly" {
   metadata {
-    name = "readonly"
+    name = "read-only-access"
   }
 }
 
-# Service account that backs the long-lived, log-only debug kubeconfig.
 resource "kubernetes_service_account" "readonly" {
   metadata {
     name      = "readonly"
@@ -32,15 +29,6 @@ resource "kubernetes_service_account" "readonly" {
   }
 }
 
-# Long-lived (non-expiring) token for the read-only service account. Since
-# Kubernetes 1.24 a service account no longer gets a token secret created
-# automatically, so we request one explicitly. `wait_for_service_account_token`
-# makes Tofu block until the token controller has populated `.data.token`,
-# so the kubeconfig output below is always complete after an apply.
-#
-# Trade-off vs. `kubectl create token`: this token does not expire on its own.
-# It is the "permanent kubeconfig" we want, but to revoke it you must delete
-# this secret (and re-apply to mint a fresh one).
 resource "kubernetes_secret" "readonly_token" {
   metadata {
     name      = "readonly-token"
@@ -54,11 +42,6 @@ resource "kubernetes_secret" "readonly_token" {
   wait_for_service_account_token = true
 }
 
-# Cluster-wide read access to pods, their logs and events, plus the workload
-# objects needed to debug a rollout. Deliberately excludes "secrets" and
-# "configmaps" so a holder can inspect why a pod is failing without ever
-# reading sensitive data. RBAC is default-deny, so only what is listed here
-# is permitted.
 resource "kubernetes_cluster_role" "log_reader" {
   metadata {
     name = "log-reader"
