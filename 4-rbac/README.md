@@ -1,4 +1,4 @@
-# 5-rbac
+# 4-rbac
 
 Read-only RBAC for debugging deployments without exposing secrets, exposed as a
 **permanent kubeconfig** (like the admin one, but with far fewer rights).
@@ -26,7 +26,7 @@ Set the `CLUSTER_ENDPOINT` GitHub Actions **variable** (the API server URL, e.g.
 Then, with access to the Tofu state (your normal admin kubeconfig):
 
 ```bash
-cd 5-rbac
+cd 4-rbac
 tofu output -raw kubeconfig > readonly.kubeconfig
 KUBECONFIG=readonly.kubeconfig kubectl get pods -A
 ```
