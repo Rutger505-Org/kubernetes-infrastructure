@@ -189,10 +189,7 @@ jobs:
         run: |
           environment="${{ needs.configure.outputs.environment }}"
           tofu init
-          if ! tofu workspace select "$environment" 2>/dev/null; then
-            echo "Workspace \"$environment\" does not exist; nothing to destroy."
-            exit 0
-          fi
+          tofu workspace select "$environment" || exit 0
           tofu apply -input=false -auto-approve -destroy
           tofu workspace select default
           tofu workspace delete "$environment"
