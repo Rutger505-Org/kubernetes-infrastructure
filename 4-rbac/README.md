@@ -27,10 +27,9 @@ writes the Tofu state into the cluster (`backend "kubernetes"`,
 this repo is public, so the credential must never land in Action artifacts or
 logs. Instead you pull it afterwards from your own machine.
 
-Make sure the `CLUSTER_ENDPOINT` GitHub Actions **variable** is set (the API
-server URL, e.g. `https://1.2.3.4:6443`) so the apply bakes it into the
-generated kubeconfig. Then, with your normal **admin** kubeconfig (needed to
-read the remote state):
+The API server URL is baked in via the `cluster_endpoint` variable (defaults to
+the Tailscale-exposed endpoint). With your normal **admin** kubeconfig (needed
+to read the remote state):
 
 ```bash
 cd 4-rbac

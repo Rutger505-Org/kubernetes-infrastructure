@@ -69,8 +69,6 @@ jobs:
 
       - name: OpenTofu Apply RBAC
         working-directory: ./4-rbac
-        env:
-          TF_VAR_cluster_endpoint: ${{ vars.CLUSTER_ENDPOINT }}
         run: |
           tofu init
           tofu apply -input=false -auto-approve
