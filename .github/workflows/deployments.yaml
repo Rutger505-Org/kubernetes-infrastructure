@@ -14,6 +14,9 @@ on:
 
 jobs:
   configure:
+    # Configuration is derived from the pull request / tag that triggered the
+    # run. The scheduled cleanup has no such trigger and doesn't need it.
+    if: github.event_name != 'schedule'
     name: Generate Configuration
     runs-on: ubuntu-latest
     outputs:
@@ -192,3 +195,79 @@ jobs:
           tofu apply -input=false -auto-approve -destroy
           tofu workspace select default
           tofu workspace delete ${{ needs.configure.outputs.environment }}
+
+  cleanup-pr-environments:
+    # Runs on a schedule (configured by the caller) to garbage-collect PR
+    # environments whose pull request was abandoned, i.e. never closed/merged
+    # so the per-PR `destroy-pr-environment` job never fired.
+    if: github.event_name == 'schedule'
+    name: Cleanup Abandoned PR Environments
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Checkout infrastructure repository
+        uses: actions/checkout@v4
+        with:
+          repository: Rutger505-Org/kubernetes-infrastructure
+          path: infrastructure
+
+      - name: List open pull requests
+        id: open_prs
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { default: listOpenPullRequests } = await import('${{ github.workspace }}/infrastructure/.github/scripts/deployment/open-pull-requests.mjs');
+            return await listOpenPullRequests({ github, context, core });
+
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TAILSCALE_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Setup Kubernetes
+        uses: ./infrastructure/.github/actions/setup-kubernetes
+        with:
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+
+      - name: OpenTofu Destroy Abandoned PR Environments
+        working-directory: ./deploy
+        env:
+          OPEN_PR_NUMBERS: ${{ steps.open_prs.outputs.numbers }}
+          # Only application_name matters for a destroy: it keys the backend
+          # state and the resource names. The other required variables are
+          # placeholders that satisfy validation while resources are torn down.
+          TF_VAR_application_name: ${{ vars.APPLICATION_NAME }}
+          TF_VAR_image: unused
+          TF_VAR_hostname: unused
+          TF_VAR_certificate_issuer: letsencrypt-staging
+        run: |
+          set -euo pipefail
+
+          tofu init
+
+          environments=$(tofu workspace list | sed 's/^[*]//' | tr -d ' ' | grep -E '^pr-[0-9]+$' || true)
+
+          if [ -z "$environments" ]; then
+            echo "No PR environments found."
+            exit 0
+          fi
+
+          for environment in $environments; do
+            number="${environment#pr-}"
+
+            if echo " $OPEN_PR_NUMBERS " | grep -q " $number "; then
+              echo "Keeping $environment (PR #$number is still open)."
+              continue
+            fi
+
+            echo "Destroying $environment (PR #$number is not open)."
+            tofu workspace select "$environment"
+            tofu apply -input=false -auto-approve -destroy
+            tofu workspace select default
+            tofu workspace delete "$environment"
+          done
