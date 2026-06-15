@@ -187,9 +187,8 @@ jobs:
           TF_VAR_hostname: ${{ needs.configure.outputs.hostname }}
           TF_VAR_certificate_issuer: ${{ needs.configure.outputs.certificate_issuer }}
         run: |
-          environment="${{ needs.configure.outputs.environment }}"
           tofu init
-          tofu workspace select "$environment" || exit 0
+          tofu workspace select ${{ needs.configure.outputs.environment }} || exit 0
           tofu apply -input=false -auto-approve -destroy
           tofu workspace select default
-          tofu workspace delete "$environment"
+          tofu workspace delete ${{ needs.configure.outputs.environment }}
