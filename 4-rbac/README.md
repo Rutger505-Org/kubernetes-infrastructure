@@ -21,25 +21,29 @@ only the verbs/resources listed above are allowed.
 
 ## Getting the kubeconfig
 
-Set the `CLUSTER_ENDPOINT` GitHub Actions **variable** (the API server URL, e.g.
-`https://1.2.3.4:6443`) so the apply can bake it into the generated kubeconfig.
-Then, with access to the Tofu state (your normal admin kubeconfig):
+The module is applied automatically by the tag-deploy GitHub Action, which also
+writes the Tofu state into the cluster (`backend "kubernetes"`,
+`secret_suffix = "rbac"`). CI does **not** hand you the kubeconfig as a file —
+this repo is public, so the credential must never land in Action artifacts or
+logs. Instead you pull it afterwards from your own machine.
+
+Make sure the `CLUSTER_ENDPOINT` GitHub Actions **variable** is set (the API
+server URL, e.g. `https://1.2.3.4:6443`) so the apply bakes it into the
+generated kubeconfig. Then, with your normal **admin** kubeconfig (needed to
+read the remote state):
 
 ```bash
 cd 4-rbac
+tofu init
 tofu output -raw kubeconfig > readonly.kubeconfig
 KUBECONFIG=readonly.kubeconfig kubectl get pods -A
 ```
 
+No re-apply is needed — `tofu output` just reads the state CI already wrote.
+
 That file is a normal, **non-expiring** kubeconfig — keep it like your admin one,
 hand it to whoever (or whatever agent) needs to debug. It can read pods/logs/
 events cluster-wide and nothing else.
-
-If you'd rather build the kubeconfig by hand, grab just the token:
-
-```bash
-tofu output -raw token
-```
 
 ## Security notes
 
@@ -49,12 +53,3 @@ tofu output -raw token
 - `pods/log` is granted cluster-wide. The role can't read `secrets`, but
   application logs can still contain sensitive data an app chose to log. That's
   inherent to log access, not specific to this setup.
-
-## Alternative: short-lived token
-
-If you ever want a throwaway credential instead of the permanent one, the same
-service account can mint one on demand (expires automatically, nothing stored):
-
-```bash
-kubectl create token readonly -n readonly --duration=2h
-```
