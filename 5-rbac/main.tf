@@ -24,14 +24,34 @@ resource "kubernetes_namespace" "readonly" {
   }
 }
 
-# Service account used to hand out short-lived, log-only access. Tokens are
-# minted on demand with `kubectl create token readonly -n readonly --duration=2h`
-# and are never stored in state.
+# Service account that backs the long-lived, log-only debug kubeconfig.
 resource "kubernetes_service_account" "readonly" {
   metadata {
     name      = "readonly"
     namespace = kubernetes_namespace.readonly.metadata[0].name
   }
+}
+
+# Long-lived (non-expiring) token for the read-only service account. Since
+# Kubernetes 1.24 a service account no longer gets a token secret created
+# automatically, so we request one explicitly. `wait_for_service_account_token`
+# makes Tofu block until the token controller has populated `.data.token`,
+# so the kubeconfig output below is always complete after an apply.
+#
+# Trade-off vs. `kubectl create token`: this token does not expire on its own.
+# It is the "permanent kubeconfig" we want, but to revoke it you must delete
+# this secret (and re-apply to mint a fresh one).
+resource "kubernetes_secret" "readonly_token" {
+  metadata {
+    name      = "readonly-token"
+    namespace = kubernetes_namespace.readonly.metadata[0].name
+    annotations = {
+      "kubernetes.io/service-account.name" = kubernetes_service_account.readonly.metadata[0].name
+    }
+  }
+
+  type                           = "kubernetes.io/service-account-token"
+  wait_for_service_account_token = true
 }
 
 # Cluster-wide read access to pods, their logs and events, plus the workload
