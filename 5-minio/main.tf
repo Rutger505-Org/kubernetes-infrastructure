@@ -29,9 +29,10 @@ provider "helm" {
 # MinIO: self-hosted, S3-compatible object storage used as a personal CDN for
 # sharing clips and hosting build artifacts (e.g. the soundboard APK).
 #
-# Storage is backed by a PersistentVolumeClaim on the node's local disk (the
-# spare 250GB drives mounted into the K3s VM, exposed through the default
-# local-path StorageClass). See homelab-infrastructure for the disk-mount step.
+# Storage is backed by a PersistentVolumeClaim on the node's local disk
+# (default 30Gi via the local-path StorageClass); grow it later by bumping
+# storage_size and the underlying disk. See homelab-infrastructure for the
+# disk-mount step.
 #
 # Two hostnames are served through Traefik + cert-manager:
 #   - cdn.rutgerpronk.com   -> the S3 API (public bucket reads = direct file URLs)

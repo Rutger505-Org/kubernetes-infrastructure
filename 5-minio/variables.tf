@@ -16,9 +16,9 @@ variable "bucket_name" {
 }
 
 variable "storage_size" {
-  description = "Size of the MinIO persistent volume (e.g. '240Gi')"
+  description = "Size of the MinIO persistent volume (e.g. '30Gi')"
   type        = string
-  default     = "240Gi"
+  default     = "30Gi"
 }
 
 variable "storage_class" {

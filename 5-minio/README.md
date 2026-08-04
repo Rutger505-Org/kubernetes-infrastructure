@@ -11,7 +11,7 @@ CDN for two use cases:
 ## What it creates
 
 - A single-node MinIO `helm_release` in the `minio` namespace.
-- A persistent volume on the node's local disk (default `240Gi`, `local-path`
+- A persistent volume on the node's local disk (default `30Gi`, `local-path`
   StorageClass) — see [storage](#storage).
 - A public, anonymous read-only bucket (`cdn` by default) so uploads are
   directly downloadable.
@@ -41,18 +41,6 @@ spare 250GB drives, mount one into the K3s VM and make sure the node's
 `homelab-infrastructure` for the Proxmox disk passthrough + mount steps.
 
 To grow later: bump `storage_size` (and the underlying disk/mount).
-
-## Local apply
-
-```bash
-cd 5-minio
-tofu init
-TF_VAR_root_user=admin \
-TF_VAR_root_password='...' \
-TF_VAR_cdn_hostname=cdn.rutgerpronk.com \
-TF_VAR_console_hostname=minio.rutgerpronk.com \
-tofu apply
-```
 
 ## Uploading
 
