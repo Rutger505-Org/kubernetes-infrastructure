@@ -73,3 +73,14 @@ jobs:
           tofu init
           tofu apply -input=false -auto-approve
 
+      - name: OpenTofu Apply MinIO
+        working-directory: ./5-minio
+        env:
+          TF_VAR_root_user: ${{ secrets.MINIO_ROOT_USER }}
+          TF_VAR_root_password: ${{ secrets.MINIO_ROOT_PASSWORD }}
+          TF_VAR_cdn_hostname: ${{ vars.MINIO_CDN_HOSTNAME }}
+          TF_VAR_console_hostname: ${{ vars.MINIO_CONSOLE_HOSTNAME }}
+        run: |
+          tofu init
+          tofu apply -input=false -auto-approve
+
