@@ -82,7 +82,5 @@ jobs:
           TF_VAR_console_hostname: ${{ vars.MINIO_CONSOLE_HOSTNAME }}
         run: |
           tofu init
-          # One-shot: release a stale state lock left by a cancelled run.
-          tofu force-unlock -force a5172d90-c8da-1066-8c43-5838ae25eb97 || true
           tofu apply -input=false -auto-approve
 
