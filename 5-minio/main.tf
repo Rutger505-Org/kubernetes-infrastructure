@@ -60,6 +60,18 @@ resource "helm_release" "minio" {
     value = "1"
   }
 
+  # The chart defaults to a 16Gi memory *request*, which won't schedule on a
+  # homelab node. A personal CDN needs a fraction of that.
+  set {
+    name  = "resources.requests.memory"
+    value = var.memory_request
+  }
+
+  set {
+    name  = "resources.limits.memory"
+    value = var.memory_limit
+  }
+
   # Root credentials come from CI vars/secrets.
   set {
     name  = "rootUser"

@@ -21,6 +21,18 @@ variable "storage_size" {
   default     = "30Gi"
 }
 
+variable "memory_request" {
+  description = "MinIO pod memory request (chart default 16Gi won't schedule on a homelab node)"
+  type        = string
+  default     = "256Mi"
+}
+
+variable "memory_limit" {
+  description = "MinIO pod memory limit"
+  type        = string
+  default     = "512Mi"
+}
+
 variable "storage_class" {
   description = "StorageClass backing MinIO's PVC (K3s default is 'local-path')"
   type        = string
