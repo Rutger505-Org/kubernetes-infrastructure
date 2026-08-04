@@ -188,7 +188,7 @@ jobs:
           TF_VAR_certificate_issuer: ${{ needs.configure.outputs.certificate_issuer }}
         run: |
           tofu init
-          tofu workspace select ${{ needs.configure.outputs.environment }}
+          tofu workspace select ${{ needs.configure.outputs.environment }} || exit 0
           tofu apply -input=false -auto-approve -destroy
           tofu workspace select default
           tofu workspace delete ${{ needs.configure.outputs.environment }}

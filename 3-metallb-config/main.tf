@@ -39,7 +39,8 @@ resource "kubernetes_manifest" "ip_address_pool" {
       namespace = "metallb-system"
     }
     spec = {
-      addresses = var.ip_addresses
+      addresses  = var.ip_addresses
+      autoAssign = false
     }
   }
 }
