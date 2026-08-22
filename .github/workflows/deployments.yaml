@@ -12,6 +12,13 @@ on:
       DOCKERHUB_TOKEN:
         required: true
 
+# Serialize deploy/destroy per environment so a still-running deploy and the
+# destroy triggered by merging/closing the PR never race on the same OpenTofu
+# state lock (kubernetes backend locks per workspace: pr-<n> / production).
+concurrency:
+  group: deploy-${{ github.repository }}-${{ github.event.pull_request.number || github.ref_name }}
+  cancel-in-progress: false
+
 jobs:
   configure:
     name: Generate Configuration
