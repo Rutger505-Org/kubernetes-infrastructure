@@ -48,6 +48,13 @@ resource "helm_release" "pihole" {
   wait    = true
   timeout = 600
 
+  # TEMPORARY: 2 replicas to force a fresh rollout across both nodes and test
+  # whether the image pull + DNS come up cleanly. Revert to 1 after testing.
+  set {
+    name  = "replicaCount"
+    value = "2"
+  }
+
   # --- DNS service (.231): mixed TCP+UDP on port 53 via MetalLB -------------
   set {
     name  = "serviceDns.type"
