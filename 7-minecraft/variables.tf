@@ -55,25 +55,25 @@ variable "curseforge_file_id" {
 variable "server_memory" {
   description = "JVM heap for the Minecraft server."
   type        = string
-  default     = "8G"
+  default     = "3G"
 }
 
 variable "memory_request" {
   description = "Pod memory request. Keep above the JVM heap to leave room for the JVM's own overhead."
   type        = string
-  default     = "10Gi"
+  default     = "4Gi"
 }
 
 variable "memory_limit" {
   description = "Pod memory limit."
   type        = string
-  default     = "12Gi"
+  default     = "6Gi"
 }
 
 variable "cpu_request" {
   description = "Pod CPU request."
   type        = string
-  default     = "1"
+  default     = "500m"
 }
 
 variable "storage_size" {
