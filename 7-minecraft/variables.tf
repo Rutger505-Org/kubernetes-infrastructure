@@ -1,0 +1,113 @@
+variable "hostname" {
+  description = "Public hostname players connect to. mc-router routes on this name (Minecraft handshake host), so multiple servers can share one port."
+  type        = string
+  default     = "mc-vault.rutgerpronk.com"
+}
+
+variable "router_ip" {
+  description = "Fixed MetalLB LoadBalancer IP for mc-router on port 25565. Must be in the pool from 3-metallb-config and port-forwarded on the router."
+  type        = string
+}
+
+variable "node_hostname" {
+  description = "Node the Minecraft server is pinned to (kubernetes.io/hostname). The lade-pc node has the memory for a modded server."
+  type        = string
+  default     = "k3s-1"
+}
+
+variable "idle_shutdown_after" {
+  description = "How long mc-router waits without connections before scaling the server StatefulSet to 0."
+  type        = string
+  default     = "1h"
+}
+
+variable "server_type" {
+  description = "itzg/minecraft-server TYPE. VANILLA boots without a CurseForge key; switch to AUTO_CURSEFORGE once a real key is stored."
+  type        = string
+  default     = "VANILLA"
+}
+
+variable "minecraft_version" {
+  description = "Minecraft version. Ignored for AUTO_CURSEFORGE, which takes the version from the modpack."
+  type        = string
+  default     = "LATEST"
+}
+
+variable "curseforge_api_key" {
+  description = "CurseForge API key for AUTO_CURSEFORGE. A placeholder is fine while the key application is pending; the server only reads it when server_type is AUTO_CURSEFORGE."
+  type        = string
+  sensitive   = true
+  default     = "PLACEHOLDER"
+}
+
+variable "curseforge_slug" {
+  description = "CurseForge modpack slug, e.g. vault-hunters-1-18-2 for Vault Hunters Third Edition."
+  type        = string
+  default     = "vault-hunters-1-18-2"
+}
+
+variable "curseforge_file_id" {
+  description = "Optional exact CurseForge modpack file id. Empty means newest."
+  type        = string
+  default     = ""
+}
+
+variable "server_memory" {
+  description = "JVM heap for the Minecraft server."
+  type        = string
+  default     = "8G"
+}
+
+variable "memory_request" {
+  description = "Pod memory request. Keep above the JVM heap to leave room for the JVM's own overhead."
+  type        = string
+  default     = "10Gi"
+}
+
+variable "memory_limit" {
+  description = "Pod memory limit."
+  type        = string
+  default     = "12Gi"
+}
+
+variable "cpu_request" {
+  description = "Pod CPU request."
+  type        = string
+  default     = "1"
+}
+
+variable "storage_size" {
+  description = "Size of the world/mods PVC. Vault Hunters plus a world needs well over 10Gi."
+  type        = string
+  default     = "30Gi"
+}
+
+variable "storage_class" {
+  description = "StorageClass for the Minecraft PVC."
+  type        = string
+  default     = "local-path"
+}
+
+variable "ops" {
+  description = "Comma-separated player names granted operator."
+  type        = string
+  default     = ""
+}
+
+variable "motd" {
+  description = "Server list message."
+  type        = string
+  default     = "Vault Hunters on Kubernetes"
+}
+
+variable "difficulty" {
+  description = "Server difficulty."
+  type        = string
+  default     = "normal"
+}
+
+variable "max_players" {
+  description = "Maximum concurrent players."
+  type        = string
+  default     = "10"
+}
