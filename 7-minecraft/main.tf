@@ -126,9 +126,11 @@ resource "helm_release" "minecraft" {
     value = "true"
   }
 
+  # RollingUpdate so a changed pod template (resources, server type) actually
+  # replaces the running pod; OnDelete left a stale Pending pod behind.
   set {
     name  = "strategyType"
-    value = "OnDelete"
+    value = "RollingUpdate"
   }
 
   # Pinned to the node with the memory for a modded server.
