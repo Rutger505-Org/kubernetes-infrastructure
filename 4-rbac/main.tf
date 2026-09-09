@@ -55,7 +55,15 @@ resource "kubernetes_cluster_role" "log_reader" {
 
   rule {
     api_groups = ["apps"]
-    resources  = ["deployments", "replicasets"]
+    resources  = ["deployments", "replicasets", "statefulsets"]
+    verbs      = ["get", "list", "watch"]
+  }
+
+  # Services and namespaces are needed to inspect LoadBalancer IPs and
+  # mc-router's routing annotations while validating deployments.
+  rule {
+    api_groups = [""]
+    resources  = ["services", "namespaces", "persistentvolumeclaims"]
     verbs      = ["get", "list", "watch"]
   }
 }
