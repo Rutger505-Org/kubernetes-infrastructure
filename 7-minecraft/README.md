@@ -63,6 +63,7 @@ Set through the deploy workflow:
 | `TF_VAR_router_ip` | `vars.MINECRAFT_ROUTER_IP` |
 | `TF_VAR_hostname` | `vars.MINECRAFT_HOSTNAME` |
 | `TF_VAR_server_type` | `vars.MINECRAFT_SERVER_TYPE` |
+| `TF_VAR_idle_shutdown_after` | `vars.MINECRAFT_IDLE_SHUTDOWN_AFTER` |
 | `TF_VAR_curseforge_slug` | `vars.MINECRAFT_CURSEFORGE_SLUG` |
 | `TF_VAR_curseforge_api_key` | `secrets.CURSEFORGE_API_KEY` |
 
