@@ -235,5 +235,51 @@ resource "helm_release" "minecraft" {
     value = var.memory_limit
   }
 
+  # A modded first boot downloads the pack and generates the world, which takes
+  # far longer than the chart's default 20 failures. The startup probe holds
+  # liveness and readiness off until the server answers mc-health once, so the
+  # liveness threshold below only applies to a server that was already up.
+  set {
+    name  = "startupProbe.enabled"
+    value = "true"
+  }
+
+  set {
+    name  = "startupProbe.periodSeconds"
+    value = var.probe_period_seconds
+  }
+
+  set {
+    name  = "startupProbe.failureThreshold"
+    value = var.startup_failure_threshold
+  }
+
+  set {
+    name  = "readinessProbe.initialDelaySeconds"
+    value = var.readiness_initial_delay_seconds
+  }
+
+  set {
+    name  = "readinessProbe.periodSeconds"
+    value = var.probe_period_seconds
+  }
+
+  set {
+    name  = "readinessProbe.failureThreshold"
+    value = var.readiness_failure_threshold
+  }
+
+  # A running server that stops answering mc-health is hung; restart it quickly
+  # instead of waiting out 20 failures.
+  set {
+    name  = "livenessProbe.periodSeconds"
+    value = var.probe_period_seconds
+  }
+
+  set {
+    name  = "livenessProbe.failureThreshold"
+    value = var.liveness_failure_threshold
+  }
+
   depends_on = [helm_release.mc_router]
 }

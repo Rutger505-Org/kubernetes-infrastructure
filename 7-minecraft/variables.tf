@@ -110,3 +110,33 @@ variable "max_players" {
   type        = string
   default     = "10"
 }
+
+variable "probe_period_seconds" {
+  description = "Seconds between mc-health polls for the startup, readiness and liveness probes."
+  type        = string
+  default     = "5"
+}
+
+variable "startup_failure_threshold" {
+  description = "Failed mc-health polls tolerated during boot before the pod is restarted. 200 polls at 5s covers a modded pack download plus world generation."
+  type        = string
+  default     = "200"
+}
+
+variable "readiness_initial_delay_seconds" {
+  description = "Seconds before the first readiness poll."
+  type        = string
+  default     = "10"
+}
+
+variable "readiness_failure_threshold" {
+  description = "Failed mc-health polls before the pod leaves the Service endpoints."
+  type        = string
+  default     = "200"
+}
+
+variable "liveness_failure_threshold" {
+  description = "Failed mc-health polls before an already-started server is restarted."
+  type        = string
+  default     = "5"
+}
