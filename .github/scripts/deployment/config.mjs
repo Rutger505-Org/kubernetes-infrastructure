@@ -46,20 +46,19 @@ export default async function generateConfig({ context, core }) {
   try {
     const { applicationName, dockerhubUsername } = validateApplicationConfig();
 
-    const isTag = context.ref.startsWith("refs/tags/");
-    const tag = isTag ? context.ref.replace("refs/tags/", "") : undefined;
+    const isMain = context.ref === "refs/heads/main";
 
     const config = {
       application_name: applicationName,
-      environment: isTag
+      environment: isMain
         ? "production"
         : `pr-${context.payload.pull_request.number}`,
-      is_production: isTag ? "true" : "false",
-      image: `${dockerhubUsername}/${applicationName}:${isTag ? tag : context.sha}`,
-      hostname: isTag
+      is_production: isMain ? "true" : "false",
+      image: `${dockerhubUsername}/${applicationName}:${context.sha}`,
+      hostname: isMain
         ? process.env.BASE_DOMAIN
         : `${context.sha}.${process.env.BASE_DOMAIN}`,
-      certificate_issuer: isTag
+      certificate_issuer: isMain
         ? "letsencrypt-production"
         : "letsencrypt-staging",
     };
