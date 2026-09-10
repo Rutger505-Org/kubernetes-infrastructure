@@ -178,6 +178,13 @@ resource "helm_release" "minecraft" {
   }
 
   # CurseForge modpack settings; the Java 17+ image includes a built-in API key.
+  # The chart's own apiKey.key default is the literal placeholder "CHANGEME!",
+  # which overrides the image's baked-in key unless explicitly cleared here.
+  set {
+    name  = "minecraftServer.autoCurseForge.apiKey.key"
+    value = ""
+  }
+
   set {
     name  = "minecraftServer.autoCurseForge.slug"
     value = var.curseforge_slug
