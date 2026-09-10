@@ -131,6 +131,15 @@ resource "helm_release" "minecraft" {
     value = var.hostname
   }
 
+  # Vault Hunters 3rd Edition is 1.18.2/Forge 40.x, which only runs on Java 17.
+  # The default image tag ships a newer JVM and Mixin dies with
+  # "Unsupported class file major version". Java 17 still carries the image's
+  # baked-in CurseForge API key.
+  set {
+    name  = "image.tag"
+    value = var.image_tag
+  }
+
   set {
     name  = "minecraftServer.eula"
     value = "TRUE"

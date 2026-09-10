@@ -27,6 +27,12 @@ variable "server_type" {
   default     = "AUTO_CURSEFORGE"
 }
 
+variable "image_tag" {
+  description = "itzg/minecraft-server image tag. Pinned to java17 because Forge 40.x (Minecraft 1.18.2) fails on newer JVMs."
+  type        = string
+  default     = "java17"
+}
+
 variable "minecraft_version" {
   description = "Minecraft version. Ignored for AUTO_CURSEFORGE, which takes the version from the modpack."
   type        = string

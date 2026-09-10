@@ -31,6 +31,10 @@ This only works for `kind: StatefulSet`, which is why `workloadAsStatefulSet` is
 
 The server uses `AUTO_CURSEFORGE` with the built-in CurseForge API key (included in the Java 17+ image). No custom API key is needed.
 
+The image tag is pinned to `java17` (`TF_VAR_image_tag`). Vault Hunters Third Edition is Minecraft 1.18.2
+on Forge 40.x, which crashes on newer JVMs with `Unsupported class file major version`. Java 17 still
+carries the baked-in CurseForge key.
+
 The modpack downloads on first boot; the PVC keeps world and mods afterwards.
 
 ## Resetting world data
