@@ -27,20 +27,11 @@ give the next server its own hostname annotation, nothing else changes.
 
 This only works for `kind: StatefulSet`, which is why `workloadAsStatefulSet` is true.
 
-## CurseForge key
+## Modpack
 
-`server_type` is `VANILLA` by default so the stack runs end-to-end without a CurseForge API key.
-The key lives in the `curseforge-api-key` Secret and may hold a placeholder in the meantime.
+The server uses `AUTO_CURSEFORGE` with the built-in CurseForge API key (included in the Java 17+ image). No custom API key is needed.
 
-Switching to the modpack once the real key arrives:
-
-```bash
-gh secret set CURSEFORGE_API_KEY --repo Rutger505-Org/kubernetes-infrastructure
-gh variable set MINECRAFT_SERVER_TYPE --repo Rutger505-Org/kubernetes-infrastructure --body AUTO_CURSEFORGE
-git tag <next-version> && git push origin <next-version>
-```
-
-The pod then downloads the pack on next boot; the PVC keeps world and mods afterwards.
+The modpack downloads on first boot; the PVC keeps world and mods afterwards.
 
 ## Resetting world data
 
@@ -65,6 +56,5 @@ Set through the deploy workflow:
 | `TF_VAR_server_type` | `vars.MINECRAFT_SERVER_TYPE` |
 | `TF_VAR_idle_shutdown_after` | `vars.MINECRAFT_IDLE_SHUTDOWN_AFTER` |
 | `TF_VAR_curseforge_slug` | `vars.MINECRAFT_CURSEFORGE_SLUG` |
-| `TF_VAR_curseforge_api_key` | `secrets.CURSEFORGE_API_KEY` |
 
 The rest have defaults in `variables.tf`.

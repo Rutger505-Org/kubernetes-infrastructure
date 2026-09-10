@@ -47,20 +47,6 @@ resource "kubernetes_namespace" "minecraft" {
   }
 }
 
-# CurseForge key lives in its own Secret so the value can be replaced later
-# without touching the Helm release. A placeholder is harmless while
-# server_type is VANILLA.
-resource "kubernetes_secret" "curseforge" {
-  metadata {
-    name      = "curseforge-api-key"
-    namespace = kubernetes_namespace.minecraft.metadata[0].name
-  }
-
-  data = {
-    "cf-api-key" = var.curseforge_api_key
-  }
-}
-
 resource "helm_release" "mc_router" {
   name       = "mc-router"
   repository = "https://itzg.github.io/minecraft-server-charts/"
@@ -191,17 +177,7 @@ resource "helm_release" "minecraft" {
     value = "ClusterIP"
   }
 
-  # CurseForge modpack settings; only consulted when type is AUTO_CURSEFORGE.
-  set {
-    name  = "minecraftServer.autoCurseForge.apiKey.existingSecret"
-    value = kubernetes_secret.curseforge.metadata[0].name
-  }
-
-  set {
-    name  = "minecraftServer.autoCurseForge.apiKey.secretKey"
-    value = "cf-api-key"
-  }
-
+  # CurseForge modpack settings; the Java 17+ image includes a built-in API key.
   set {
     name  = "minecraftServer.autoCurseForge.slug"
     value = var.curseforge_slug
