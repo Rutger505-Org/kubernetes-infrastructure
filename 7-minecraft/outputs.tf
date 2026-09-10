@@ -9,6 +9,6 @@ output "hostname" {
 }
 
 output "server_type" {
-  description = "Active server type (VANILLA until a real CurseForge key is in place)."
+  description = "Active server type (AUTO_CURSEFORGE for the Vault Hunters Third Edition modpack)."
   value       = var.server_type
 }

@@ -22,22 +22,15 @@ variable "idle_shutdown_after" {
 }
 
 variable "server_type" {
-  description = "itzg/minecraft-server TYPE. VANILLA boots without a CurseForge key; switch to AUTO_CURSEFORGE once a real key is stored."
+  description = "itzg/minecraft-server TYPE. AUTO_CURSEFORGE downloads the Vault Hunters Third Edition modpack using the image's baked-in CurseForge API key."
   type        = string
-  default     = "VANILLA"
+  default     = "AUTO_CURSEFORGE"
 }
 
 variable "minecraft_version" {
   description = "Minecraft version. Ignored for AUTO_CURSEFORGE, which takes the version from the modpack."
   type        = string
   default     = "LATEST"
-}
-
-variable "curseforge_api_key" {
-  description = "CurseForge API key for AUTO_CURSEFORGE. A placeholder is fine while the key application is pending; the server only reads it when server_type is AUTO_CURSEFORGE."
-  type        = string
-  sensitive   = true
-  default     = "PLACEHOLDER"
 }
 
 variable "curseforge_slug" {

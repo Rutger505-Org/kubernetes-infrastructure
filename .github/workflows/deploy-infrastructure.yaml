@@ -102,7 +102,6 @@ jobs:
           TF_VAR_server_type: ${{ vars.MINECRAFT_SERVER_TYPE }}
           TF_VAR_idle_shutdown_after: ${{ vars.MINECRAFT_IDLE_SHUTDOWN_AFTER }}
           TF_VAR_curseforge_slug: ${{ vars.MINECRAFT_CURSEFORGE_SLUG }}
-          TF_VAR_curseforge_api_key: ${{ secrets.CURSEFORGE_API_KEY }}
         run: |
           tofu init
           tofu apply -input=false -auto-approve
