@@ -84,19 +84,9 @@ jobs:
           tofu init
           tofu apply -input=false -auto-approve
 
-      - name: OpenTofu Apply Pi-hole
-        working-directory: ./6-pihole
-        env:
-          TF_VAR_dns_ip: ${{ vars.PIHOLE_DNS_IP }}
-          TF_VAR_web_ip: ${{ vars.PIHOLE_WEB_IP }}
-          TF_VAR_web_password: ${{ secrets.PIHOLE_WEB_PASSWORD }}
-        run: |
-          tofu init
-          tofu apply -input=false -auto-approve
-
       # Tears down the Minecraft stack: helm releases, namespace, PVC and world
-      # data. Remove this step and the 7-minecraft directory once a tag has run
-      # it and the namespace is gone.
+      # data. Runs before Pi-hole so a failing Pi-hole apply cannot block it.
+      # Remove this step and the 7-minecraft directory once a tag has run it.
       - name: OpenTofu Destroy Minecraft
         working-directory: ./7-minecraft
         env:
@@ -108,4 +98,15 @@ jobs:
         run: |
           tofu init
           tofu destroy -input=false -auto-approve
+
+      - name: OpenTofu Apply Pi-hole
+        working-directory: ./6-pihole
+        env:
+          TF_VAR_dns_ip: ${{ vars.PIHOLE_DNS_IP }}
+          TF_VAR_web_ip: ${{ vars.PIHOLE_WEB_IP }}
+          TF_VAR_web_password: ${{ secrets.PIHOLE_WEB_PASSWORD }}
+        run: |
+          tofu init
+          tofu apply -input=false -auto-approve
+
 
