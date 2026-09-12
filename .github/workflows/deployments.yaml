@@ -32,27 +32,61 @@ jobs:
       certificate_issuer: ${{ steps.config.outputs.certificate_issuer }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Checkout infrastructure repository
-        uses: actions/checkout@v4
-        with:
-          repository: Rutger505-Org/kubernetes-infrastructure
-          path: infrastructure
-
       - name: Configuration
         id: config
-        uses: actions/github-script@v7
         env:
           BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
           APPLICATION_NAME: ${{ vars.APPLICATION_NAME }}
           DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
-        with:
-          script: |
-            const { default: generateConfig } = await import('${{ github.workspace }}/infrastructure/.github/scripts/deployment/config.mjs');
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
 
-            return await generateConfig({ core, context });
+          missing=()
+          [ -z "${APPLICATION_NAME:-}" ] && missing+=(APPLICATION_NAME)
+          [ -z "${DOCKERHUB_USERNAME:-}" ] && missing+=(DOCKERHUB_USERNAME)
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing required environment variables: ${missing[*]}"
+            exit 1
+          fi
+
+          # On a pull_request "closed" event GitHub sets github.ref to the base
+          # branch (refs/heads/main), not a PR ref, so this must also require
+          # the push event or a merged PR gets misclassified as production.
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            environment=production
+            is_production=true
+            hostname="$BASE_DOMAIN"
+            certificate_issuer=letsencrypt-production
+          else
+            environment="pr-${PR_NUMBER}"
+            is_production=false
+            hostname="${{ github.sha }}.$BASE_DOMAIN"
+            certificate_issuer=letsencrypt-staging
+          fi
+
+          image="$DOCKERHUB_USERNAME/$APPLICATION_NAME:${{ github.sha }}"
+
+          {
+            echo "application_name=$APPLICATION_NAME"
+            echo "environment=$environment"
+            echo "is_production=$is_production"
+            echo "image=$image"
+            echo "hostname=$hostname"
+            echo "certificate_issuer=$certificate_issuer"
+          } >>"$GITHUB_OUTPUT"
+
+          {
+            echo "# Deployment Configuration 🚀"
+            echo "| Parameter | Value |"
+            echo "| - | - |"
+            echo "| application_name | $APPLICATION_NAME |"
+            echo "| environment | $environment |"
+            echo "| is_production | $is_production |"
+            echo "| image | $image |"
+            echo "| hostname | $hostname |"
+            echo "| certificate_issuer | $certificate_issuer |"
+          } >>"$GITHUB_STEP_SUMMARY"
 
   build-docker-image:
     if: github.event.action != 'closed'
@@ -121,24 +155,19 @@ jobs:
 
       - name: Generate deployment environment variables
         id: env
-        uses: actions/github-script@v8
         env:
           SECRETS: ${{ toJSON(secrets) }}
           VARS: ${{ toJSON(vars) }}
-        with:
-          script: |
-            const { default: generateDeploymentEnvironment } = await import('${{ github.workspace }}/infrastructure/.github/scripts/deployment/deployment-variables.mjs');
-            return await generateDeploymentEnvironment(
-              core,
-              {
-                filterPrefix: 'DEPLOYMENT_',
-                unfilteredVars: JSON.parse(process.env.VARS),
-                vars: {},
+        run: |
+          set -euo pipefail
 
-                unfilteredSecrets: JSON.parse(process.env.SECRETS),
-                secrets: {},
-              },
-            );
+          # Pick out DEPLOYMENT_-prefixed vars/secrets and strip the prefix,
+          # e.g. DEPLOYMENT_AUTH_EMAIL_FROM -> AUTH_EMAIL_FROM.
+          vars_json=$(jq -c 'with_entries(select(.key | startswith("DEPLOYMENT_")) | .key |= sub("^DEPLOYMENT_"; ""))' <<<"$VARS")
+          secrets_json=$(jq -c 'with_entries(select(.key | startswith("DEPLOYMENT_")) | .key |= sub("^DEPLOYMENT_"; ""))' <<<"$SECRETS")
+
+          echo "vars=$vars_json" >>"$GITHUB_OUTPUT"
+          echo "secrets=$secrets_json" >>"$GITHUB_OUTPUT"
 
       - name: OpenTofu Apply
         working-directory: ./deploy
