@@ -84,14 +84,21 @@ jobs:
           tofu init
           tofu apply -input=false -auto-approve
 
-      - name: OpenTofu Apply Pi-hole
-        working-directory: ./6-pihole
-        env:
-          TF_VAR_dns_ip: ${{ vars.PIHOLE_DNS_IP }}
-          TF_VAR_web_ip: ${{ vars.PIHOLE_WEB_IP }}
-          TF_VAR_web_password: ${{ secrets.PIHOLE_WEB_PASSWORD }}
-        run: |
-          tofu init
-          tofu apply -input=false -auto-approve
+      # TEMPORARILY DISABLED: the namespace `pihole` is stuck in Terminating and
+      # the module's state is empty, so this apply fails with
+      # `secrets "sh.helm.release.v1.pihole.v1" is forbidden: unable to create
+      # new content in namespace pihole because it is being terminated`, which
+      # fails every tag deploy for unrelated modules too.
+      # Uncomment once the stuck namespace is cleared (needs admin kubectl:
+      # `kubectl get ns pihole -o json` -> remove the blocking finalizers).
+      # - name: OpenTofu Apply Pi-hole
+      #   working-directory: ./6-pihole
+      #   env:
+      #     TF_VAR_dns_ip: ${{ vars.PIHOLE_DNS_IP }}
+      #     TF_VAR_web_ip: ${{ vars.PIHOLE_WEB_IP }}
+      #     TF_VAR_web_password: ${{ secrets.PIHOLE_WEB_PASSWORD }}
+      #   run: |
+      #     tofu init
+      #     tofu apply -input=false -auto-approve
 
 
