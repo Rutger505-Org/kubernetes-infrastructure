@@ -46,7 +46,12 @@ export default async function generateConfig({ context, core }) {
   try {
     const { applicationName, dockerhubUsername } = validateApplicationConfig();
 
-    const isMain = context.ref === "refs/heads/main";
+    // On a pull_request "closed" event GitHub sets context.ref to the base
+    // branch (refs/heads/main), not a PR ref, so isMain must also require
+    // the push event or a merged PR gets misclassified as production and
+    // its preview namespace never gets torn down.
+    const isMain =
+      context.eventName === "push" && context.ref === "refs/heads/main";
 
     const config = {
       application_name: applicationName,
