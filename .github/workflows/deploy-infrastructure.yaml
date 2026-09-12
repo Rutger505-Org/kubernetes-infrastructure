@@ -94,7 +94,10 @@ jobs:
           tofu init
           tofu apply -input=false -auto-approve
 
-      - name: OpenTofu Apply Minecraft
+      # Tears down the Minecraft stack: helm releases, namespace, PVC and world
+      # data. Remove this step and the 7-minecraft directory once a tag has run
+      # it and the namespace is gone.
+      - name: OpenTofu Destroy Minecraft
         working-directory: ./7-minecraft
         env:
           TF_VAR_router_ip: ${{ vars.MINECRAFT_ROUTER_IP }}
@@ -104,5 +107,5 @@ jobs:
           TF_VAR_curseforge_slug: ${{ vars.MINECRAFT_CURSEFORGE_SLUG }}
         run: |
           tofu init
-          tofu apply -input=false -auto-approve
+          tofu destroy -input=false -auto-approve
 
