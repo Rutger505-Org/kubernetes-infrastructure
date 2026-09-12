@@ -1,5 +1,10 @@
 # 7-minecraft
 
+> **Scheduled for removal.** The CI step for this module runs `tofu destroy`, so the
+> next tag deletes the helm releases, the `minecraft` namespace and the PVC with the
+> world data. This directory and the workflow step get deleted in a follow-up PR once
+> that destroy run is green.
+
 Minecraft server (Vault Hunters Third Edition) behind [mc-router](https://github.com/itzg/mc-router), with auto-sleep.
 
 ## Traffic path
