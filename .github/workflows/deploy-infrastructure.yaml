@@ -2,8 +2,8 @@ name: Deployments
 
 on:
   push:
-    tags:
-      - "*"
+    branches:
+      - main
 
 jobs:
   apply-to-kubernetes:
