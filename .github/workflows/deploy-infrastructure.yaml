@@ -84,17 +84,5 @@ jobs:
           tofu init
           tofu apply -input=false -auto-approve
 
-      # Tears down Pi-hole: helm release, namespace and its config/data.
-      # Remove this step and the 6-pihole directory once a merge has run it
-      # and the namespace is gone.
-      - name: OpenTofu Destroy Pi-hole
-        working-directory: ./6-pihole
-        env:
-          TF_VAR_dns_ip: ${{ vars.PIHOLE_DNS_IP }}
-          TF_VAR_web_ip: ${{ vars.PIHOLE_WEB_IP }}
-          TF_VAR_web_password: ${{ secrets.PIHOLE_WEB_PASSWORD }}
-        run: |
-          tofu init
-          tofu destroy -input=false -auto-approve
 
 
