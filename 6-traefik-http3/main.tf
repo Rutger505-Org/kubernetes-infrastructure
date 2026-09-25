@@ -43,7 +43,12 @@ resource "kubernetes_manifest" "traefik_http3" {
             }
           }
         }
+        # With the chart default (service.single = false) the UDP/443 port is
+        # rendered into a *separate* "traefik-udp" Service, which would need a
+        # second MetalLB address or a shared-IP annotation. Switching to a single
+        # Service keeps TCP/443 and UDP/443 on the same LoadBalancer IP.
         service = {
+          single = true
           spec = {
             loadBalancerIP = var.traefik_ip
           }
