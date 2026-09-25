@@ -32,3 +32,19 @@ curl -sI --http3 https://rutgerpronk.com | head -1
 
 The Service should list a UDP port next to the TCP ones, and the response should carry
 `alt-svc: h3=":443"`.
+
+## Why the Service is patched by hand
+
+The chart is supposed to render the UDP port itself once `ports.websecure.http3.enabled`
+and `service.single` are set. In this cluster it does not: `helm get manifest traefik`
+shows a Service with only `web/TCP` and `websecure/TCP`, while `helm get values traefik --all`
+does contain `service.single: true` and the Deployment runs with
+`--entryPoints.websecure.http3`. Rendering the same chart version (`37.1.1+up37.1.0`) with the
+same values outside the cluster does produce `websecure-http3/UDP/443`.
+
+So the module adds that one port to the Service with `kubectl patch`, the same approach
+`3-metallb-config` already uses for the LoadBalancer IP. The patch:
+
+- is skipped entirely when the port is already present,
+- reads the current ports and appends to them, so allocated `nodePort`s are preserved,
+- re-runs on every deploy, which also repairs the port if a Traefik chart upgrade drops it.
