@@ -69,13 +69,21 @@ resource "kubernetes_manifest" "traefik_http3" {
 # (37.1.1+up37.1.0) with the same values locally *does* produce the UDP port, so
 # the chart bundled on the node behaves differently than the published one.
 #
-# Until that is sorted out upstream, the UDP port is added to the Service here,
-# in the same style as the loadBalancerIP patch in 3-metallb-config. The patch is
-# a no-op once the port exists and it preserves the existing nodePorts, so
-# re-running it never reshuffles live traffic.
+# So the UDP port is added to the Service here, in the same style as the
+# loadBalancerIP patch in 3-metallb-config.
+#
+# targetPort must be the *numeric* container port, not the named port
+# "websecure": a named targetPort only resolves to a containerPort with a
+# matching protocol, and the Traefik pod only declares websecure as TCP. With the
+# name, kube-proxy has nowhere to send the UDP packets and every QUIC handshake
+# times out while the Service still looks correct.
+#
+# The patch rebuilds the desired port list, keeps allocated nodePorts and is a
+# no-op once the Service already matches, so it can run on every deploy.
 resource "null_resource" "traefik_http3_service_port" {
   triggers = {
     advertised_port = var.advertised_port
+    target_port     = var.websecure_container_port
   }
 
   provisioner "local-exec" {
@@ -83,14 +91,16 @@ resource "null_resource" "traefik_http3_service_port" {
     command     = <<-EOT
       set -eu
 
-      if kubectl get service traefik -n kube-system -o jsonpath='{.spec.ports[*].name}' | tr ' ' '\n' | grep -qx 'websecure-http3'; then
-        echo "traefik service already exposes websecure-http3, nothing to do"
+      SERVICE=$(kubectl get service traefik -n kube-system -o json)
+
+      DESIRED=$(echo "$SERVICE" | jq -c --argjson p ${var.advertised_port} --argjson t ${var.websecure_container_port} '[.spec.ports[] | select(.name != "websecure-http3")] + [{name: "websecure-http3", protocol: "UDP", port: $p, targetPort: $t} + ([.spec.ports[] | select(.name == "websecure-http3") | {nodePort}] | first // {})]')
+
+      if [ "$(echo "$SERVICE" | jq -cS '.spec.ports')" = "$(echo "$DESIRED" | jq -cS '.')" ]; then
+        echo "traefik service already exposes websecure-http3 correctly, nothing to do"
         exit 0
       fi
 
-      PORTS=$(kubectl get service traefik -n kube-system -o json | jq -c --argjson p ${var.advertised_port} '.spec.ports + [{name: "websecure-http3", port: $p, targetPort: "websecure", protocol: "UDP"}]')
-
-      kubectl patch service traefik -n kube-system --type=merge -p "{\"spec\":{\"ports\":$PORTS}}"
+      kubectl patch service traefik -n kube-system --type=merge -p "{\"spec\":{\"ports\":$DESIRED}}"
     EOT
   }
 

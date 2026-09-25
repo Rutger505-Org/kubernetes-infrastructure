@@ -8,3 +8,9 @@ variable "advertised_port" {
   type        = number
   default     = 443
 }
+
+variable "websecure_container_port" {
+  description = "Numeric container port of Traefik's websecure entrypoint, used as targetPort for the UDP/HTTP3 service port"
+  type        = number
+  default     = 8443
+}
