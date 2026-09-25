@@ -25,13 +25,10 @@ provider "kubernetes" {
 # k3s helm-controller, which is the supported way to change Traefik settings
 # without taking ownership of the chart away from k3s.
 #
-# This turns on http3 for the websecure entrypoint: Traefik then listens on
-# UDP/8443 (QUIC) inside the pod and advertises it with the Alt-Svc header.
-#
-# It also owns the LoadBalancer address of the traefik Service. That has to live
-# in the chart values rather than in a kubectl patch: the MetalLB pool has
-# autoAssign = false, so a Service without an explicit loadBalancerIP gets no
-# address at all the moment helm re-renders it.
+# Enabling http3 on the websecure entrypoint makes Traefik listen on UDP/443
+# (QUIC) and advertise it through the Alt-Svc response header. The Traefik
+# chart adds the UDP port to the existing traefik Service, so MetalLB keeps
+# serving both TCP and UDP from the same LoadBalancer IP.
 resource "kubernetes_manifest" "traefik_http3" {
   manifest = {
     apiVersion = "helm.cattle.io/v1"
@@ -50,10 +47,12 @@ resource "kubernetes_manifest" "traefik_http3" {
             }
           }
         }
+        # With the chart default (service.single = false) the UDP/443 port is
+        # rendered into a *separate* "traefik-udp" Service, which would need a
+        # second MetalLB address or a shared-IP annotation. Switching to a single
+        # Service keeps TCP/443 and UDP/443 on the same LoadBalancer IP.
         service = {
-          annotations = {
-            "metallb.io/allow-shared-ip" = local.shared_ip_key
-          }
+          single = true
           spec = {
             loadBalancerIP = var.traefik_ip
           }
@@ -63,19 +62,28 @@ resource "kubernetes_manifest" "traefik_http3" {
   }
 }
 
-# One-time migration away from the kubectl patch this module used before
-# (PRs #51 and #52): that patch added a websecure-http3/UDP port to the
-# helm-owned traefik Service. MetalLB refuses to share one address between two
-# Services that expose the same port and protocol, so the patched port has to go
-# before traefik-http3 can claim the address.
+# The chart's own UDP port never materialised in this cluster: the Service in the
+# deployed release only contains web/TCP and websecure/TCP, even though
+# "helm get values traefik" shows service.single = true and Traefik itself runs
+# with --entryPoints.websecure.http3. Rendering the same chart version
+# (37.1.1+up37.1.0) with the same values locally *does* produce the UDP port, so
+# the chart bundled on the node behaves differently than the published one.
 #
-# The chart itself never renders that port in this cluster, so this runs once and
-# then stays a no-op. It is kept rather than run by hand so the module also
-# repairs the situation if a future chart upgrade starts adding the port again,
-# which would otherwise silently break the shared IP.
-resource "null_resource" "remove_patched_udp_port" {
+# So the UDP port is added to the Service here, in the same style as the
+# loadBalancerIP patch in 3-metallb-config.
+#
+# targetPort must be the *numeric* container port, not the named port
+# "websecure": a named targetPort only resolves to a containerPort with a
+# matching protocol, and the Traefik pod only declares websecure as TCP. With the
+# name, kube-proxy has nowhere to send the UDP packets and every QUIC handshake
+# times out while the Service still looks correct.
+#
+# The patch rebuilds the desired port list, keeps allocated nodePorts and is a
+# no-op once the Service already matches, so it can run on every deploy.
+resource "null_resource" "traefik_http3_service_port" {
   triggers = {
-    migration = "remove-patched-udp-port-v1"
+    advertised_port = var.advertised_port
+    target_port     = var.websecure_container_port
   }
 
   provisioner "local-exec" {
@@ -85,69 +93,16 @@ resource "null_resource" "remove_patched_udp_port" {
 
       SERVICE=$(kubectl get service traefik -n kube-system -o json)
 
-      if ! echo "$SERVICE" | jq -e '.spec.ports[] | select(.name == "websecure-http3")' >/dev/null; then
-        echo "traefik service has no patched websecure-http3 port, nothing to undo"
+      DESIRED=$(echo "$SERVICE" | jq -c --argjson p ${var.advertised_port} --argjson t ${var.websecure_container_port} '[.spec.ports[] | select(.name != "websecure-http3")] + [{name: "websecure-http3", protocol: "UDP", port: $p, targetPort: $t} + ([.spec.ports[] | select(.name == "websecure-http3") | {nodePort}] | first // {})]')
+
+      if [ "$(echo "$SERVICE" | jq -cS '.spec.ports')" = "$(echo "$DESIRED" | jq -cS '.')" ]; then
+        echo "traefik service already exposes websecure-http3 correctly, nothing to do"
         exit 0
       fi
 
-      PORTS=$(echo "$SERVICE" | jq -c '[.spec.ports[] | select(.name != "websecure-http3")]')
-
-      kubectl patch service traefik -n kube-system --type=merge -p "{\"spec\":{\"ports\":$PORTS}}"
+      kubectl patch service traefik -n kube-system --type=merge -p "{\"spec\":{\"ports\":$DESIRED}}"
     EOT
   }
 
   depends_on = [kubernetes_manifest.traefik_http3]
-}
-
-# The chart is supposed to add the UDP port to the traefik Service by itself once
-# http3 is enabled, but the chart bundled with this k3s release does not: helm
-# renders a Service with only web/TCP and websecure/TCP, while the very same
-# chart version rendered outside the cluster does produce the UDP port. Rather
-# than patching a helm-owned object from a provisioner, the UDP entrypoint is
-# exposed as its own Service that this module fully owns.
-#
-# Both Services carry the same metallb.io/allow-shared-ip key and the same
-# address, which is what lets MetalLB hand out one IP for TCP/443 and UDP/443.
-#
-# targetPort is the *numeric* container port on purpose. A named targetPort only
-# resolves to a containerPort with a matching protocol, and the Traefik pod only
-# declares websecure as TCP, so the named form silently blackholes every QUIC
-# packet while the Service still looks perfectly healthy.
-resource "kubernetes_service" "traefik_http3" {
-  metadata {
-    name      = "traefik-http3"
-    namespace = "kube-system"
-
-    annotations = {
-      "metallb.io/allow-shared-ip" = local.shared_ip_key
-    }
-
-    labels = {
-      "app.kubernetes.io/name"       = "traefik"
-      "app.kubernetes.io/instance"   = "traefik-kube-system"
-      "app.kubernetes.io/managed-by" = "OpenTofu"
-    }
-  }
-
-  spec {
-    type             = "LoadBalancer"
-    load_balancer_ip = var.traefik_ip
-
-    selector = {
-      "app.kubernetes.io/name"     = "traefik"
-      "app.kubernetes.io/instance" = "traefik-kube-system"
-    }
-
-    port {
-      name        = "websecure-http3"
-      protocol    = "UDP"
-      port        = var.advertised_port
-      target_port = var.websecure_container_port
-    }
-  }
-
-  depends_on = [
-    kubernetes_manifest.traefik_http3,
-    null_resource.remove_patched_udp_port,
-  ]
 }
