@@ -2,53 +2,49 @@
 
 Enables HTTP/3 (QUIC) on the k3s-bundled Traefik ingress controller.
 
-k3s installs Traefik itself through a packaged `HelmChart` in `kube-system`, so this module
-does not install Traefik. It owns two things:
+k3s installs Traefik itself via a packaged `HelmChart` in `kube-system`. This module does
+not install Traefik; it adds a `HelmChartConfig` named `traefik` in `kube-system`, whose
+`valuesContent` the k3s helm-controller merges into that chart on the next reconcile.
 
-1. A `HelmChartConfig` named `traefik`, whose values the k3s helm-controller merges into that
-   chart. It enables `ports.websecure.http3`, pins the LoadBalancer address, and adds the
-   MetalLB IP-sharing annotation.
-2. A `traefik-http3` Service that exposes Traefik's QUIC listener on UDP.
+What it turns on:
 
-Result: Traefik listens on UDP/443 next to TCP/443 and sends `Alt-Svc: h3=":443"`, so browsers
-upgrade to HTTP/3 on the next request.
+- `ports.websecure.http3.enabled = true` — Traefik listens on **UDP/443** in addition to
+  TCP/443 and sends `Alt-Svc: h3=":443"` so browsers upgrade to HTTP/3 on the next request.
+- `service.spec.loadBalancerIP` is pinned to the same MetalLB address used in
+  `3-metallb-config`, so the chart's own Service template cannot drop the static IP when
+  helm-controller re-renders it.
 
-## Why a second Service instead of one
+Notes:
 
-The Traefik chart is supposed to add the UDP port to its own Service once http3 is enabled.
-The chart bundled with this k3s release does not: `helm get manifest traefik` renders a Service
-with only `web/TCP` and `websecure/TCP`, even though `helm get values traefik --all` shows the
-http3 values arrived and the pod runs with `--entryPoints.websecure.http3`. Rendering the exact
-same chart version (`37.1.1+up37.1.0`) with the same values outside the cluster *does* produce
-`websecure-http3/UDP/443`.
-
-Patching a helm-owned Service from a provisioner works but is invisible and gets undone by the
-next chart upgrade. A separate Service is a plain object this module owns end to end, survives
-chart upgrades, and shows up in a `tofu plan`.
-
-Both Services carry the same `metallb.io/allow-shared-ip` key and the same `loadBalancerIP`,
-which is what allows MetalLB to serve TCP/443 and UDP/443 from one address.
-
-## Things that will cost you an hour if you forget them
-
-- **`targetPort` must be numeric.** A named `targetPort` only resolves to a containerPort with a
-  matching protocol, and the Traefik pod declares `websecure` as TCP only. With the name, the
-  Service looks perfectly healthy in `kubectl get svc` while every QUIC handshake times out.
-- **The LoadBalancer IP lives in the chart values**, not in a kubectl patch. The MetalLB pool has
-  `autoAssign = false`, so a Service that loses its explicit `loadBalancerIP` during a helm
-  re-render gets no address at all.
-- **HTTP/3 needs TLS**, so only the `websecure` entrypoint is affected. Plain HTTP stays HTTP/1.1.
-- **UDP/443 must be open end to end.** If the router only forwards TCP/443, clients quietly fall
-  back to HTTP/2 and nothing looks broken.
+- HTTP/3 needs TLS, so only the `websecure` entrypoint is affected. Plain HTTP stays HTTP/1.1.
+- UDP/443 must be open to the cluster: forward it on the router next to TCP/443, otherwise
+  clients simply fall back to HTTP/2.
+- `advertised_port` should match the public port; change it only if UDP is forwarded from a
+  different external port.
 
 ## Validation
 
 ```bash
-kubectl get svc -n kube-system traefik traefik-http3
+kubectl get svc traefik -n kube-system -o jsonpath='{.spec.ports[*].port}{"\n"}{.spec.ports[*].protocol}'
 curl -sI https://rutgerpronk.com | grep -i alt-svc
-curl -s --http3-only -o /dev/null -w '%{http_version}\n' https://rutgerpronk.com
+curl -sI --http3 https://rutgerpronk.com | head -1
 ```
 
-Both Services should report the same `EXTERNAL-IP`, the response should carry
-`alt-svc: h3=":443"`, and the last command should print `3`. Use `--http3-only`, not `--http3`:
-the latter silently falls back to HTTP/2 and will make a broken setup look fine.
+The Service should list a UDP port next to the TCP ones, and the response should carry
+`alt-svc: h3=":443"`.
+
+## Why the Service is patched by hand
+
+The chart is supposed to render the UDP port itself once `ports.websecure.http3.enabled`
+and `service.single` are set. In this cluster it does not: `helm get manifest traefik`
+shows a Service with only `web/TCP` and `websecure/TCP`, while `helm get values traefik --all`
+does contain `service.single: true` and the Deployment runs with
+`--entryPoints.websecure.http3`. Rendering the same chart version (`37.1.1+up37.1.0`) with the
+same values outside the cluster does produce `websecure-http3/UDP/443`.
+
+So the module adds that one port to the Service with `kubectl patch`, the same approach
+`3-metallb-config` already uses for the LoadBalancer IP. The patch:
+
+- is skipped entirely when the port is already present,
+- reads the current ports and appends to them, so allocated `nodePort`s are preserved,
+- re-runs on every deploy, which also repairs the port if a Traefik chart upgrade drops it.

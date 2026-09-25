@@ -58,3 +58,17 @@ resource "kubernetes_manifest" "l2_advertisement" {
     }
   }
 }
+
+resource "null_resource" "traefik_loadbalancer" {
+  triggers = {
+    traefik_ip = var.traefik_ip
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      kubectl patch service traefik -n kube-system -p '{"spec":{"type":"LoadBalancer","loadBalancerIP":"${var.traefik_ip}"}}'
+    EOT
+  }
+
+  depends_on = [kubernetes_manifest.ip_address_pool]
+}
