@@ -57,14 +57,13 @@ jobs:
             environment=production
             is_production=true
             hostname="$BASE_DOMAIN"
-            certificate_issuer=letsencrypt-production
           else
             environment="pr-${PR_NUMBER}"
             is_production=false
-            hostname="${{ github.sha }}.$BASE_DOMAIN"
-            certificate_issuer=letsencrypt-staging
+            hostname="pr-${PR_NUMBER}.$BASE_DOMAIN"
           fi
 
+          certificate_issuer=letsencrypt-production
           image="$DOCKERHUB_USERNAME/$APPLICATION_NAME:${{ github.sha }}"
 
           {
