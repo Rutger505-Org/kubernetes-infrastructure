@@ -61,7 +61,7 @@ jobs:
           else
             environment="pr-${PR_NUMBER}"
             is_production=false
-            hostname="${{ github.sha }}.$BASE_DOMAIN"
+            hostname="pr-${PR_NUMBER}.$BASE_DOMAIN"
             certificate_issuer=letsencrypt-staging
           fi
 
