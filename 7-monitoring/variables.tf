@@ -4,10 +4,11 @@ variable "discord_webhook_url" {
   sensitive   = true
 }
 
-variable "healthchecks_ping_url" {
-  description = "External healthchecks.io ping URL for the Watchdog dead man's switch (period 5m, grace 5m). When the cluster dies the pings stop and healthchecks.io notifies independently."
+variable "watchdog_ping_url" {
+  description = "Optional dead man's switch URL (e.g. healthchecks.io) pinged every minute by the always-firing Watchdog alert. Empty disables it."
   type        = string
   sensitive   = true
+  default     = ""
 }
 
 variable "grafana_admin_password" {
@@ -23,22 +24,21 @@ variable "grafana_ip" {
 }
 
 variable "proxmox_token_user" {
-  description = "Proxmox API token user, e.g. 'prometheus@pve'"
+  description = "Proxmox user owning the API token"
   type        = string
-  default     = ""
+  default     = "prometheus@pve"
 }
 
 variable "proxmox_token_name" {
   description = "Proxmox API token name (the part after '!')"
   type        = string
-  default     = ""
+  default     = "monitoring"
 }
 
 variable "proxmox_token_value" {
-  description = "Proxmox API token secret. Create it with the read-only PVEAuditor role; it is never used to change anything."
+  description = "Proxmox API token secret, created for a user with the read-only PVEAuditor role"
   type        = string
   sensitive   = true
-  default     = ""
 }
 
 variable "proxmox_verify_ssl" {
@@ -48,15 +48,21 @@ variable "proxmox_verify_ssl" {
 }
 
 variable "proxmox_targets" {
-  description = "Proxmox API endpoints to scrape, as host:port (8006 is the API port), e.g. ['192.168.178.10:8006']"
+  description = "Proxmox API endpoints to scrape, as host:port"
   type        = list(string)
-  default     = []
+  default = [
+    "192.168.178.200:8006",
+    "192.168.178.199:8006",
+  ]
 }
 
 variable "probe_targets" {
-  description = "URLs blackbox-exporter probes over HTTP"
+  description = "URLs blackbox-exporter probes over HTTP; each must answer 2xx (redirects are followed)"
   type        = list(string)
-  default     = []
+  default = [
+    "https://rutgerpronk.com",
+    "https://cdn.rutgerpronk.com/minio/health/live",
+  ]
 }
 
 variable "prometheus_retention" {
@@ -84,7 +90,7 @@ variable "prometheus_memory_limit" {
 }
 
 variable "storage_class" {
-  description = "StorageClass backing the monitoring PVCs (K3s default is 'local-path')"
+  description = "StorageClass backing the monitoring PVCs"
   type        = string
   default     = "local-path"
 }
@@ -92,17 +98,17 @@ variable "storage_class" {
 variable "kube_prometheus_stack_version" {
   description = "kube-prometheus-stack chart version"
   type        = string
-  default     = "91.2.0"
+  default     = "92.2.0"
 }
 
 variable "blackbox_chart_version" {
   description = "prometheus-blackbox-exporter chart version"
   type        = string
-  default     = "4.3.0"
+  default     = "11.20.0"
 }
 
 variable "pve_exporter_version" {
   description = "prometheus-pve-exporter image tag"
   type        = string
-  default     = "3.5.5"
+  default     = "3.10.1"
 }
