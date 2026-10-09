@@ -104,6 +104,7 @@ jobs:
           TF_VAR_grafana_admin_password: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
           TF_VAR_grafana_hostname: ${{ vars.GRAFANA_HOSTNAME }}
           TF_VAR_proxmox_token_value: ${{ secrets.PROXMOX_TOKEN_VALUE }}
+          TF_VAR_openclaw_gateway_token: ${{ secrets.OPENCLAW_GATEWAY_TOKEN }}
         run: |
           tofu init
           tofu apply -input=false -auto-approve

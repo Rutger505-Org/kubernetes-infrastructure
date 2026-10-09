@@ -187,7 +187,7 @@ resource "kubernetes_secret" "additional_scrape_configs" {
   }
 
   data = {
-    "prometheus-additional.yaml" = yamlencode([
+    "prometheus-additional.yaml" = yamlencode(concat([
       {
         job_name     = "proxmox"
         metrics_path = "/pve"
@@ -242,7 +242,7 @@ resource "kubernetes_secret" "additional_scrape_configs" {
           }
         ]
       }
-    ])
+    ], local.openclaw_scrape_configs))
   }
 }
 
@@ -267,7 +267,7 @@ resource "helm_release" "kube_prometheus_stack" {
     # Rendered by the chart in the same release that installs the
     # PrometheusRule CRD; a separate kubernetes_manifest would fail to plan on
     # the first apply because the CRD does not exist yet.
-    additionalPrometheusRulesMap = {
+    additionalPrometheusRulesMap = merge(local.openclaw_rules_map, {
       homelab = {
         groups = [
           {
@@ -354,11 +354,12 @@ resource "helm_release" "kube_prometheus_stack" {
           }
         ]
       }
-    }
+    })
 
     prometheus = {
       prometheusSpec = {
         retention = var.prometheus_retention
+        secrets   = [kubernetes_secret.openclaw_gateway_token.metadata[0].name]
         additionalScrapeConfigsSecret = {
           enabled = true
           name    = kubernetes_secret.additional_scrape_configs.metadata[0].name
