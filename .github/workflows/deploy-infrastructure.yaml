@@ -5,6 +5,11 @@ on:
     branches:
       - main
 
+# Queue instead of cancel: aborting a running apply can leave a module's state lock held.
+concurrency:
+  group: deploy-infrastructure
+  cancel-in-progress: false
+
 jobs:
   apply-to-kubernetes:
     name: Deploy to Kubernetes

@@ -19,6 +19,20 @@ runs:
         tofu_version: ${{ inputs.tofu-version }}
         tofu_wrapper: "false"
 
+    - name: Configure OpenTofu provider cache
+      shell: bash
+      run: |
+        mkdir -p ~/.terraform.d/plugin-cache
+        echo "TF_PLUGIN_CACHE_DIR=$HOME/.terraform.d/plugin-cache" >> "$GITHUB_ENV"
+
+    - name: Cache OpenTofu providers
+      uses: actions/cache@v4
+      with:
+        path: ~/.terraform.d/plugin-cache
+        key: tofu-providers-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
+        restore-keys: |
+          tofu-providers-${{ runner.os }}-
+
     - name: Configure Kubeconfig
       uses: ./infrastructure/.github/actions/with-post-step
       with:
