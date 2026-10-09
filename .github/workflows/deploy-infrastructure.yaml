@@ -92,5 +92,16 @@ jobs:
           tofu init
           tofu apply -input=false -auto-approve
 
+      - name: OpenTofu Apply Monitoring
+        working-directory: ./7-monitoring
+        env:
+          TF_VAR_discord_webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          TF_VAR_grafana_admin_password: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+          TF_VAR_grafana_hostname: ${{ vars.GRAFANA_HOSTNAME }}
+          TF_VAR_proxmox_token_value: ${{ secrets.PROXMOX_TOKEN_VALUE }}
+        run: |
+          tofu init
+          tofu apply -input=false -auto-approve
+
 
 
