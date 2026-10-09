@@ -283,9 +283,12 @@ resource "helm_release" "kube_prometheus_stack" {
                   description = "No Proxmox metrics for 5 minutes. The host is down, or the API token is invalid."
                 }
               },
+              # Every host in the Proxmox cluster reports the whole cluster, so
+              # the rules below aggregate by id to alert once per object, and
+              # keep working while one host is down.
               {
                 alert  = "ProxmoxNodeDown"
-                expr   = "pve_node_info and on(id) pve_up == 0"
+                expr   = "max by (id) (pve_up{id=~\"node/.*\"}) == 0"
                 for    = "5m"
                 labels = { severity = "critical" }
                 annotations = {
@@ -296,7 +299,7 @@ resource "helm_release" "kube_prometheus_stack" {
                 # Only guests set to start on boot: templates and guests that
                 # are deliberately kept off would otherwise alert forever.
                 alert  = "ProxmoxGuestStopped"
-                expr   = "pve_up{id=~\"(qemu|lxc)/.*\"} == 0 and on(id) pve_onboot_status == 1"
+                expr   = "max by (id) (pve_up{id=~\"(qemu|lxc)/.*\"}) == 0 and on(id) max by (id) (pve_onboot_status) == 1"
                 for    = "10m"
                 labels = { severity = "warning" }
                 annotations = {
@@ -305,7 +308,7 @@ resource "helm_release" "kube_prometheus_stack" {
               },
               {
                 alert  = "ProxmoxStorageFillingUp"
-                expr   = "pve_disk_usage_bytes{id=~\"storage/.*\"} / pve_disk_size_bytes{id=~\"storage/.*\"} > 0.85"
+                expr   = "max by (id) (pve_disk_usage_bytes{id=~\"storage/.*\"}) / max by (id) (pve_disk_size_bytes{id=~\"storage/.*\"}) > 0.85"
                 for    = "15m"
                 labels = { severity = "warning" }
                 annotations = {

@@ -62,6 +62,7 @@ variable "probe_targets" {
   default = [
     "https://rutgerpronk.com",
     "https://cdn.rutgerpronk.com/minio/health/live",
+    "https://minio.rutgerpronk.com",
   ]
 }
 
