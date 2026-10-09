@@ -521,7 +521,7 @@ resource "helm_release" "kube_prometheus_stack" {
         default = {
           proxmox = {
             gnetId     = 10347
-            revision   = 6
+            revision   = 5
             datasource = "Prometheus"
           }
           blackbox = {
