@@ -8,9 +8,9 @@ alerts to Discord.
 - **kube-prometheus-stack** in the `monitoring` namespace: Prometheus,
   Alertmanager, kube-state-metrics and node-exporter. Covers crashlooping pods,
   unavailable replicas, node pressure and filling disks out of the box.
-- **Grafana** on MetalLB IP `192.168.178.234`, reachable on the LAN and over
-  Tailscale only. No IngressRoute, no public certificate. Ships Proxmox,
-  blackbox and Kubernetes dashboards.
+- **Grafana** on `GRAFANA_HOSTNAME` through a Traefik `IngressRoute` with a
+  cert-manager certificate, protected by the admin password. Ships Proxmox,
+  blackbox and Kubernetes dashboards, and is probed itself via `/api/health`.
 - **blackbox-exporter**: HTTP probes of `probe_targets` (site down, slow, TLS
   certificate expiring within 14 days).
 - **pve-exporter**: Proxmox host/guest/storage metrics over the API with a
@@ -28,6 +28,9 @@ always-firing Watchdog alert to a dead man's switch such as healthchecks.io.
 | secret | `DISCORD_WEBHOOK_URL`    | Discord channel webhook               |
 | secret | `GRAFANA_ADMIN_PASSWORD` | Grafana `admin` password              |
 | secret | `PROXMOX_TOKEN_VALUE`    | Secret of `prometheus@pve!monitoring` |
+| var    | `GRAFANA_HOSTNAME`       | `grafana.rutgerpronk.com`             |
+
+`GRAFANA_HOSTNAME` must resolve to the public IP that forwards to Traefik.
 
 ## Proxmox API token
 

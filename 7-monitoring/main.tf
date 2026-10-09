@@ -224,7 +224,7 @@ resource "kubernetes_secret" "additional_scrape_configs" {
         }
         static_configs = [
           {
-            targets = var.probe_targets
+            targets = concat(var.probe_targets, ["https://${var.grafana_hostname}/api/health"])
           }
         ]
         relabel_configs = [
@@ -477,17 +477,11 @@ resource "helm_release" "kube_prometheus_stack" {
     grafana = {
       adminPassword = var.grafana_admin_password
 
-      service = {
-        type           = "LoadBalancer"
-        loadBalancerIP = var.grafana_ip
-        port           = 80
-      }
-
       ingress = { enabled = false }
 
       "grafana.ini" = {
         server = {
-          root_url = "http://${var.grafana_ip}/"
+          root_url = "https://${var.grafana_hostname}/"
         }
         analytics = {
           reporting_enabled = false
@@ -550,5 +544,58 @@ resource "helm_release" "kube_prometheus_stack" {
     kubernetes_secret.alertmanager_urls,
     kubernetes_service.pve_exporter,
     helm_release.blackbox_exporter,
+  ]
+}
+
+resource "kubernetes_manifest" "grafana_certificate" {
+  manifest = {
+    apiVersion = "cert-manager.io/v1"
+    kind       = "Certificate"
+    metadata = {
+      name      = "grafana-tls"
+      namespace = kubernetes_namespace.monitoring.metadata[0].name
+    }
+    spec = {
+      secretName = "grafana-tls"
+      issuerRef = {
+        name = var.certificate_issuer
+        kind = "ClusterIssuer"
+      }
+      dnsNames = [var.grafana_hostname]
+    }
+  }
+}
+
+resource "kubernetes_manifest" "grafana_ingressroute" {
+  manifest = {
+    apiVersion = "traefik.io/v1alpha1"
+    kind       = "IngressRoute"
+    metadata = {
+      name      = "grafana"
+      namespace = kubernetes_namespace.monitoring.metadata[0].name
+    }
+    spec = {
+      entryPoints = ["websecure"]
+      routes = [
+        {
+          match = "Host(`${var.grafana_hostname}`)"
+          kind  = "Rule"
+          services = [
+            {
+              name = "kube-prometheus-stack-grafana"
+              port = 80
+            }
+          ]
+        }
+      ]
+      tls = {
+        secretName = "grafana-tls"
+      }
+    }
+  }
+
+  depends_on = [
+    helm_release.kube_prometheus_stack,
+    kubernetes_manifest.grafana_certificate,
   ]
 }

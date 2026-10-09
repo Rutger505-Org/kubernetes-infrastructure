@@ -1,6 +1,6 @@
 output "grafana_url" {
-  description = "Grafana, reachable on the LAN and over Tailscale only"
-  value       = "http://${var.grafana_ip}"
+  description = "Public Grafana URL"
+  value       = "https://${var.grafana_hostname}"
 }
 
 output "monitoring_namespace" {

@@ -17,10 +17,15 @@ variable "grafana_admin_password" {
   sensitive   = true
 }
 
-variable "grafana_ip" {
-  description = "MetalLB LoadBalancer IP for Grafana. LAN/Tailscale only; the pool has autoAssign = false so this must be set explicitly."
+variable "grafana_hostname" {
+  description = "Public hostname for Grafana, served through Traefik (e.g. grafana.rutgerpronk.com)"
   type        = string
-  default     = "192.168.178.234"
+}
+
+variable "certificate_issuer" {
+  description = "cert-manager ClusterIssuer to use for TLS"
+  type        = string
+  default     = "letsencrypt-production"
 }
 
 variable "proxmox_token_user" {
