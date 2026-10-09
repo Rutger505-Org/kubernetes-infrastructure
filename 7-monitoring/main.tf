@@ -495,9 +495,10 @@ resource "helm_release" "kube_prometheus_stack" {
         storageClassName = var.storage_class
       }
 
+      # Grafana 13 was OOMKilled at a 256Mi limit, reliably on login.
       resources = {
-        requests = { cpu = "50m", memory = "128Mi" }
-        limits   = { memory = "256Mi" }
+        requests = { cpu = "50m", memory = "256Mi" }
+        limits   = { memory = "512Mi" }
       }
 
       dashboardProviders = {
