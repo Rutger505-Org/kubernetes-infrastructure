@@ -43,10 +43,11 @@ locals {
             },
             {
               alert  = "OpenClawMemoryPressure"
-              expr   = "sum(increase(openclaw_memory_pressure_total[15m])) > 0"
+              # The warning level fires at a hardcoded 1.5 GiB RSS, which the gateway sits around during normal use.
+              expr   = "sum(increase(openclaw_memory_pressure_total{level=\"critical\"}[15m])) > 0"
               labels = { severity = "warning" }
               annotations = {
-                summary = "OpenClaw reported memory pressure in the last 15 minutes"
+                summary = "OpenClaw reported critical memory pressure in the last 15 minutes"
               }
             }
           ]
