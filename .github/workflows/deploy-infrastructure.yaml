@@ -78,7 +78,10 @@ jobs:
           tofu init
           tofu apply -input=false -auto-approve
 
-      - name: OpenTofu Apply MinIO
+      # Teardown: MinIO is being replaced by SeaweedFS. Destroys the release and its
+      # PVC (all data), then the namespace (helm leaves it and the stuck post-job
+      # hook behind) and the now-empty state secret. Idempotent on re-runs.
+      - name: OpenTofu Destroy MinIO
         working-directory: ./5-minio
         env:
           TF_VAR_root_user: ${{ secrets.MINIO_ROOT_USER }}
@@ -87,7 +90,9 @@ jobs:
           TF_VAR_console_hostname: ${{ vars.MINIO_CONSOLE_HOSTNAME }}
         run: |
           tofu init
-          tofu apply -input=false -auto-approve
+          tofu destroy -input=false -auto-approve
+          kubectl delete namespace minio --ignore-not-found --wait --timeout=5m
+          kubectl delete secret tfstate-default-minio -n default --ignore-not-found
 
       - name: OpenTofu Apply Traefik HTTP/3
         working-directory: ./6-traefik-http3
