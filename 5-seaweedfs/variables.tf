@@ -8,44 +8,30 @@ variable "cdn_hostname" {
   }
 }
 
-variable "bucket_names" {
-  description = "Buckets to create, one per use case; objects are anonymously readable"
-  type        = list(string)
-  default     = ["clips", "artifacts"]
-}
-
-variable "storage_size" {
-  description = "Size of the SeaweedFS persistent volume (e.g. '30Gi')"
+variable "seaweedfs_ip" {
+  description = "LAN address of the SeaweedFS VM (e.g. '192.168.178.214')"
   type        = string
-  default     = "30Gi"
+
+  validation {
+    condition     = can(cidrhost("${var.seaweedfs_ip}/32", 0))
+    error_message = "seaweedfs_ip must be an IPv4 address (CI variable SEAWEEDFS_IP)."
+  }
 }
 
-variable "storage_class" {
-  description = "StorageClass backing the SeaweedFS PVC (K3s default is 'local-path')"
-  type        = string
-  default     = "local-path"
-}
-
-variable "volume_size_limit_mb" {
-  description = "Max size of one SeaweedFS volume in MB; smaller means more volume slots on the same disk"
+variable "seaweedfs_s3_port" {
+  description = "S3 gateway port on the SeaweedFS VM"
   type        = number
-  default     = 256
-}
-
-variable "memory_request" {
-  description = "SeaweedFS pod memory request"
-  type        = string
-  default     = "128Mi"
-}
-
-variable "memory_limit" {
-  description = "SeaweedFS pod memory limit"
-  type        = string
-  default     = "512Mi"
+  default     = 8333
 }
 
 variable "certificate_issuer" {
   description = "cert-manager ClusterIssuer to use for TLS"
   type        = string
   default     = "letsencrypt-production"
+}
+
+variable "bucket_names" {
+  description = "Buckets on the VM, only used for the cdn_urls output; they are created by the seaweedfs Ansible role"
+  type        = list(string)
+  default     = ["clips", "artifacts"]
 }
