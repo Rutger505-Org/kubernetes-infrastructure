@@ -35,7 +35,8 @@ provider "helm" {
 # disk-mount step.
 #
 # Two hostnames are served through Traefik + cert-manager:
-#   - cdn.rutgerpronk.com   -> the S3 API (public bucket reads = direct file URLs)
+#   - cdn.rutgerpronk.com   -> the S3 API (public bucket reads = direct file URLs,
+#                              e.g. cdn.rutgerpronk.com/clips/<file>)
 #   - minio.rutgerpronk.com -> the MinIO web console (admin only)
 
 resource "helm_release" "minio" {
@@ -99,21 +100,33 @@ resource "helm_release" "minio" {
     value = var.storage_class
   }
 
-  # Provision the CDN bucket up front, with public (anonymous read-only) policy
+  # Provision the CDN buckets up front, with public (anonymous read-only) policy
   # so uploaded files are directly linkable (and Discord can preview them).
-  set {
-    name  = "buckets[0].name"
-    value = var.bucket_name
+  # One bucket per use case keeps URLs short (cdn.rutgerpronk.com/<bucket>/<file>)
+  # and lets each bucket get its own lifecycle/versioning later.
+  # Removing a name here does not delete the bucket from MinIO.
+  dynamic "set" {
+    for_each = var.bucket_names
+    content {
+      name  = "buckets[${set.key}].name"
+      value = set.value
+    }
   }
 
-  set {
-    name  = "buckets[0].policy"
-    value = "download" # anonymous read-only
+  dynamic "set" {
+    for_each = var.bucket_names
+    content {
+      name  = "buckets[${set.key}].policy"
+      value = "download" # anonymous read-only
+    }
   }
 
-  set {
-    name  = "buckets[0].purge"
-    value = "false"
+  dynamic "set" {
+    for_each = var.bucket_names
+    content {
+      name  = "buckets[${set.key}].purge"
+      value = "false"
+    }
   }
 
   # Disable the chart's bundled ingress; we manage Traefik IngressRoutes below
