@@ -79,8 +79,7 @@ variable "probe_targets" {
   type        = list(string)
   default = [
     "https://rutgerpronk.com",
-    "https://cdn.rutgerpronk.com/minio/health/live",
-    "https://minio.rutgerpronk.com",
+    "https://cdn.rutgerpronk.com/healthz",
   ]
 }
 

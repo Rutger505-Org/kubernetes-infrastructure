@@ -78,6 +78,14 @@ jobs:
           tofu init
           tofu apply -input=false -auto-approve
 
+      - name: OpenTofu Apply SeaweedFS
+        working-directory: ./5-seaweedfs
+        env:
+          TF_VAR_cdn_hostname: ${{ vars.CDN_HOSTNAME }}
+        run: |
+          tofu init
+          tofu apply -input=false -auto-approve
+
       - name: OpenTofu Apply Traefik HTTP/3
         working-directory: ./6-traefik-http3
         env:
