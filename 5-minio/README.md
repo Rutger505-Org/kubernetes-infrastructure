@@ -13,8 +13,9 @@ CDN for two use cases:
 - A single-node MinIO `helm_release` in the `minio` namespace.
 - A persistent volume on the node's local disk (default `30Gi`, `local-path`
   StorageClass) — see [storage](#storage).
-- A public, anonymous read-only bucket (`cdn` by default) so uploads are
-  directly downloadable.
+- Public, anonymous read-only buckets, one per use case (`clips` and
+  `artifacts` by default), so uploads are directly downloadable at
+  `https://cdn.rutgerpronk.com/<bucket>/<file>`.
 - Two Traefik `IngressRoute`s with cert-manager certificates:
   - `cdn.rutgerpronk.com` → S3 API (public file URLs).
   - `minio.rutgerpronk.com` → admin console.
@@ -44,12 +45,11 @@ To grow later: bump `storage_size` (and the underlying disk/mount).
 
 ## Uploading
 
-Any S3 tool works (`aws s3`, `rclone`, `mc`). A small purpose-built uploader for
-`~/Videos/Clips` lives in the `clipcdn` project.
+Any S3 tool works (`aws s3`, `rclone`, `mc`).
 
 ```bash
 # Example with the MinIO client (mc):
 mc alias set homecdn https://cdn.rutgerpronk.com admin '<password>'
-mc cp clip.mp4 homecdn/cdn/clips/clip.mp4
-# -> https://cdn.rutgerpronk.com/cdn/clips/clip.mp4
+mc cp clip.mp4 homecdn/clips/clip.mp4
+# -> https://cdn.rutgerpronk.com/clips/clip.mp4
 ```

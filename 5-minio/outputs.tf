@@ -1,6 +1,6 @@
-output "cdn_url" {
-  description = "Base URL for the public CDN bucket"
-  value       = "https://${var.cdn_hostname}/${var.bucket_name}"
+output "cdn_urls" {
+  description = "Base URL per public CDN bucket"
+  value       = { for name in var.bucket_names : name => "https://${var.cdn_hostname}/${name}" }
 }
 
 output "console_url" {

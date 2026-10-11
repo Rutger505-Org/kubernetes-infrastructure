@@ -9,10 +9,10 @@ variable "root_password" {
   sensitive   = true
 }
 
-variable "bucket_name" {
-  description = "Name of the public CDN bucket to provision (anonymous read-only)"
-  type        = string
-  default     = "cdn"
+variable "bucket_names" {
+  description = "Public CDN buckets to provision (anonymous read-only), one per use case"
+  type        = list(string)
+  default     = ["clips", "artifacts"]
 }
 
 variable "storage_size" {
