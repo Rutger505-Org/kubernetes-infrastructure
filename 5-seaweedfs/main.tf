@@ -5,8 +5,10 @@ terraform {
       version = "~> 2.25"
     }
     helm = {
-      source  = "hashicorp/helm"
-      version = "~> 2.12"
+      source = "hashicorp/helm"
+      # 3.x embeds Helm 3.20; the 2.x line (Helm 3.15) lacks fromToml, which
+      # the SeaweedFS chart uses.
+      version = "~> 3.3"
     }
     random = {
       source  = "hashicorp/random"
@@ -25,7 +27,7 @@ provider "kubernetes" {
 }
 
 provider "helm" {
-  kubernetes {
+  kubernetes = {
     config_path = "~/.kube/config"
   }
 }
