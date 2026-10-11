@@ -26,6 +26,12 @@ variable "storage_class" {
   default     = "local-path"
 }
 
+variable "volume_size_limit_mb" {
+  description = "Max size of one SeaweedFS volume in MB; smaller means more volume slots on the same disk"
+  type        = number
+  default     = 256
+}
+
 variable "memory_request" {
   description = "SeaweedFS pod memory request"
   type        = string

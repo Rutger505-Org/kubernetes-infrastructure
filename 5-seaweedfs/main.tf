@@ -85,7 +85,19 @@ resource "helm_release" "seaweedfs" {
   timeout = 600
 
   values = [yamlencode({
-    master = { enabled = false }
+    # The all-in-one pod still reads these master settings. Every bucket is
+    # its own collection and needs its own volume, and the volume server sizes
+    # its slot count as free disk / volumeSizeLimitMB. With the chart defaults
+    # (1000 MB volumes, 7 new volumes per collection) the slots were used up
+    # before any bucket got a volume, so every PUT failed.
+    master = {
+      enabled           = false
+      volumeSizeLimitMB = var.volume_size_limit_mb
+      config            = <<-EOT
+        [master.volume_growth]
+        copy_1 = 1
+      EOT
+    }
     volume = { enabled = false }
     filer  = { enabled = false }
 
