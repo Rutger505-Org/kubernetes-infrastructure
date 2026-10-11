@@ -8,6 +8,10 @@ terraform {
       source  = "hashicorp/helm"
       version = "~> 2.12"
     }
+    minio = {
+      source  = "aminueza/minio"
+      version = "3.44.0"
+    }
   }
 
   backend "kubernetes" {
@@ -24,6 +28,13 @@ provider "helm" {
   kubernetes {
     config_path = "~/.kube/config"
   }
+}
+
+provider "minio" {
+  minio_server   = var.cdn_hostname
+  minio_ssl      = true
+  minio_user     = var.root_user
+  minio_password = var.root_password
 }
 
 # MinIO: self-hosted, S3-compatible object storage used as a personal CDN for
@@ -100,34 +111,14 @@ resource "helm_release" "minio" {
     value = var.storage_class
   }
 
-  # Provision the CDN buckets up front, with public (anonymous read-only) policy
-  # so uploaded files are directly linkable (and Discord can preview them).
-  # One bucket per use case keeps URLs short (cdn.rutgerpronk.com/<bucket>/<file>)
-  # and lets each bucket get its own lifecycle/versioning later.
-  # Removing a name here does not delete the bucket from MinIO.
-  dynamic "set" {
-    for_each = var.bucket_names
-    content {
-      name  = "buckets[${set.key}].name"
-      value = set.value
-    }
-  }
-
-  dynamic "set" {
-    for_each = var.bucket_names
-    content {
-      name  = "buckets[${set.key}].policy"
-      value = "download" # anonymous read-only
-    }
-  }
-
-  dynamic "set" {
-    for_each = var.bucket_names
-    content {
-      name  = "buckets[${set.key}].purge"
-      value = "false"
-    }
-  }
+  # No users or buckets through the chart: its post-install job needs the
+  # quay.io/minio/mc image, which MinIO no longer publishes, and the default
+  # users list creates a consoleAdmin "console" user with password "console123".
+  # Buckets are managed with the minio provider below instead.
+  values = [yamlencode({
+    users   = []
+    buckets = []
+  })]
 
   # Disable the chart's bundled ingress; we manage Traefik IngressRoutes below
   # so cert-manager issues certs consistently with the rest of the cluster.
@@ -140,6 +131,28 @@ resource "helm_release" "minio" {
     name  = "consoleIngress.enabled"
     value = "false"
   }
+}
+
+# --- Buckets ------------------------------------------------------------------
+
+# One public bucket per use case keeps URLs short
+# (cdn.rutgerpronk.com/<bucket>/<file>) and lets each bucket get its own
+# lifecycle/versioning later. Anonymous read-only so uploaded files are directly
+# linkable (and Discord can preview them).
+
+resource "minio_s3_bucket" "cdn" {
+  for_each = toset(var.bucket_names)
+
+  bucket = each.value
+
+  depends_on = [helm_release.minio, kubernetes_manifest.cdn_ingressroute]
+}
+
+resource "minio_s3_bucket_anonymous_access" "cdn" {
+  for_each = minio_s3_bucket.cdn
+
+  bucket      = each.value.bucket
+  access_type = "public-read"
 }
 
 # --- Ingress: S3 API (the public CDN endpoint) -------------------------------

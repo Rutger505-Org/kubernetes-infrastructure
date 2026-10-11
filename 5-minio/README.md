@@ -15,10 +15,31 @@ CDN for two use cases:
   StorageClass) — see [storage](#storage).
 - Public, anonymous read-only buckets, one per use case (`clips` and
   `artifacts` by default), so uploads are directly downloadable at
-  `https://cdn.rutgerpronk.com/<bucket>/<file>`.
+  `https://cdn.rutgerpronk.com/<bucket>/<file>`. See [buckets](#buckets).
 - Two Traefik `IngressRoute`s with cert-manager certificates:
   - `cdn.rutgerpronk.com` → S3 API (public file URLs).
   - `minio.rutgerpronk.com` → admin console.
+
+## Buckets
+
+Buckets are managed with the [`aminueza/minio`](https://registry.terraform.io/providers/aminueza/minio)
+provider over `cdn.rutgerpronk.com`, using the root credentials, not with the
+chart's `buckets` value. The chart creates buckets and users in a post-install
+Job that runs the `quay.io/minio/mc` image, which MinIO no longer publishes, so
+that Job never starts and the `helm upgrade` times out. The chart's `users`
+are turned off too: its default creates a `console` user with password
+`console123` and the `consoleAdmin` policy.
+
+The chart never removes users it created earlier. If a `console` user still
+exists, disable or remove it by hand:
+
+```bash
+mc admin user remove homecdn console
+```
+
+Removing a bucket name from `bucket_names` makes OpenTofu try to delete the
+bucket. That fails while the bucket still holds objects, since `force_destroy`
+is not set.
 
 ## Required CI configuration
 
