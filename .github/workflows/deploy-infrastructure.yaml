@@ -111,5 +111,13 @@ jobs:
           tofu init
           tofu apply -input=false -auto-approve
 
-
-
+      - name: OpenTofu Apply Home Assistant
+        working-directory: ./8-home-assistant
+        env:
+          TF_VAR_mqtt_ip: ${{ vars.MQTT_IP }}
+          TF_VAR_home_assistant_ip: ${{ vars.HOME_ASSISTANT_IP }}
+          TF_VAR_mqtt_username: ${{ vars.MQTT_USERNAME }}
+          TF_VAR_mqtt_password: ${{ secrets.MQTT_PASSWORD }}
+        run: |
+          tofu init
+          tofu apply -input=false -auto-approve
