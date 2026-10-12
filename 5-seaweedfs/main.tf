@@ -4,17 +4,6 @@ terraform {
       source  = "hashicorp/kubernetes"
       version = "~> 2.25"
     }
-    # helm and random no longer manage anything, but stay until the apply that
-    # destroys the old helm release and generated keys has run: OpenTofu needs
-    # the provider to destroy what is still in state. Drop both afterwards.
-    helm = {
-      source  = "hashicorp/helm"
-      version = "~> 3.3"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.6"
-    }
   }
 
   backend "kubernetes" {
@@ -25,12 +14,6 @@ terraform {
 
 provider "kubernetes" {
   config_path = "~/.kube/config"
-}
-
-provider "helm" {
-  kubernetes = {
-    config_path = "~/.kube/config"
-  }
 }
 
 # SeaweedFS: self-hosted, S3-compatible object storage used as a personal CDN
