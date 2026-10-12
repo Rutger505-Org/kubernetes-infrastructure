@@ -85,6 +85,10 @@ jobs:
           TF_VAR_seaweedfs_ip: ${{ vars.SEAWEEDFS_IP }}
         run: |
           tofu init
+          # The provider errors on a deleted EndpointSlice instead of recreating it.
+          if ! kubectl -n seaweedfs get endpointslice seaweedfs-s3-vm >/dev/null 2>&1; then
+            tofu state rm kubernetes_endpoint_slice_v1.s3 || true
+          fi
           tofu apply -input=false -auto-approve
 
       - name: OpenTofu Apply Traefik HTTP/3
