@@ -76,8 +76,14 @@ resource "kubernetes_endpoint_slice_v1" "s3" {
 
   address_type = "IPv4"
 
+  # Traefik skips endpoints that are not explicitly ready, and nothing probes a
+  # hand-written slice to set it.
   endpoint {
     addresses = [var.seaweedfs_ip]
+
+    condition {
+      ready = true
+    }
   }
 
   port {
