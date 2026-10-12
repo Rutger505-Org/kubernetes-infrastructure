@@ -4,6 +4,6 @@ output "cdn_urls" {
 }
 
 output "s3_endpoint" {
-  description = "S3 endpoint for uploads (credentials in the seaweedfs-s3-credentials secret)"
+  description = "S3 endpoint for uploads (admin credentials are the SEAWEEDFS_ADMIN_* secrets in homelab-infrastructure)"
   value       = "https://${var.cdn_hostname}"
 }

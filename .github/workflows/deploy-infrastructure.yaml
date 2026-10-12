@@ -82,6 +82,7 @@ jobs:
         working-directory: ./5-seaweedfs
         env:
           TF_VAR_cdn_hostname: ${{ vars.CDN_HOSTNAME }}
+          TF_VAR_seaweedfs_ip: ${{ vars.SEAWEEDFS_IP }}
         run: |
           tofu init
           tofu apply -input=false -auto-approve
