@@ -111,7 +111,7 @@ jobs:
           tofu init
           tofu apply -input=false -auto-approve
 
-      - name: OpenTofu Apply Home Assistant
+      - name: OpenTofu Destroy Home Assistant
         working-directory: ./8-home-assistant
         env:
           TF_VAR_mqtt_ip: ${{ vars.MQTT_IP }}
@@ -120,4 +120,4 @@ jobs:
           TF_VAR_mqtt_password: ${{ secrets.MQTT_PASSWORD }}
         run: |
           tofu init
-          tofu apply -input=false -auto-approve
+          tofu destroy -input=false -auto-approve
