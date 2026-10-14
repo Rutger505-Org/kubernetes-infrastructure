@@ -21,7 +21,7 @@ variable "openclaw_gateway_token" {
 variable "openclaw_target" {
   description = "OpenClaw gateway address as host:port"
   type        = string
-  default     = "192.168.178.206:18789"
+  default     = "192.168.178.210:18789"
 }
 
 variable "grafana_admin_password" {
