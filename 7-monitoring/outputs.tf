@@ -1,5 +1,5 @@
 output "grafana_url" {
-  description = "Public Grafana URL"
+  description = "Grafana URL, LAN only"
   value       = "https://${var.grafana_hostname}"
 }
 

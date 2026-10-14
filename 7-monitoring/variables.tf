@@ -31,14 +31,15 @@ variable "grafana_admin_password" {
 }
 
 variable "grafana_hostname" {
-  description = "Public hostname for Grafana, served through Traefik (e.g. grafana.rutgerpronk.com)"
+  description = "LAN hostname Grafana is served on by Caddy on the reverse-proxy VM (homelab-infrastructure)"
   type        = string
+  default     = "grafana.homelab.rutgerpronk.com"
 }
 
-variable "certificate_issuer" {
-  description = "cert-manager ClusterIssuer to use for TLS"
+variable "grafana_load_balancer_ip" {
+  description = "MetalLB address of the Grafana Service, Caddy's upstream. Must not be port-forwarded by the router."
   type        = string
-  default     = "letsencrypt-production"
+  default     = "192.168.178.231"
 }
 
 variable "proxmox_token_user" {
