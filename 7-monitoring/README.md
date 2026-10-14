@@ -1,45 +1,12 @@
-# 7-monitoring — Monitoring and alerting
+# 7-monitoring
 
-Watches the k3s cluster, the Proxmox hosts, the OpenClaw Gateway and the public
-sites, and posts alerts to Discord.
+Prometheus stack in `monitoring`, alerting to Discord: kube-prometheus-stack, Grafana on `GRAFANA_HOSTNAME` (Traefik, admin password), blackbox probes of `probe_targets` (down, slow, TLS expiring within 14 days), pve-exporter (read-only Proxmox token), and the OpenClaw Gateway's `/api/diagnostics/prometheus` on `openclaw_target` (off when `OPENCLAW_GATEWAY_TOKEN` is empty).
 
-## What it creates
+Prometheus can't report its own cluster going down; HetrixTools checks `rutgerpronk.com` externally. Optionally set `watchdog_ping_url` for a dead man's switch.
 
-- **kube-prometheus-stack** in the `monitoring` namespace: Prometheus,
-  Alertmanager, kube-state-metrics and node-exporter. Covers crashlooping pods,
-  unavailable replicas, node pressure and filling disks out of the box.
-- **Grafana** on `GRAFANA_HOSTNAME` through a Traefik `IngressRoute` with a
-  cert-manager certificate, protected by the admin password. Ships Proxmox,
-  blackbox and Kubernetes dashboards, and is probed itself via `/api/health`.
-- **blackbox-exporter**: HTTP probes of `probe_targets` (site down, slow, TLS
-  certificate expiring within 14 days).
-- **pve-exporter**: Proxmox host/guest/storage metrics over the API with a
-  read-only token. Nothing here can change the hypervisor.
-- **OpenClaw**: scrapes the Gateway's `/api/diagnostics/prometheus` on
-  `openclaw_target` (the OpenClaw VM, `192.168.178.210:18789`), with alerts for
-  the Gateway being down, stuck sessions and critical memory pressure. Off when
-  `OPENCLAW_GATEWAY_TOKEN` is empty.
+CI config: secrets `DISCORD_WEBHOOK_URL`, `GRAFANA_ADMIN_PASSWORD`, `PROXMOX_TOKEN_VALUE`, `OPENCLAW_GATEWAY_TOKEN` (optional); var `GRAFANA_HOSTNAME`.
 
-Prometheus runs inside the cluster it watches, so it cannot report the cluster
-itself going down. That is left to an external check (HetrixTools on
-`rutgerpronk.com`). Optionally set `watchdog_ping_url` to route the
-always-firing Watchdog alert to a dead man's switch such as healthchecks.io.
-
-## Required CI configuration
-
-| Kind   | Name                     | Value                                 |
-| ------ | ------------------------ | ------------------------------------- |
-| secret | `DISCORD_WEBHOOK_URL`    | Discord channel webhook               |
-| secret | `GRAFANA_ADMIN_PASSWORD` | Grafana `admin` password              |
-| secret | `PROXMOX_TOKEN_VALUE`    | Secret of `prometheus@pve!monitoring` |
-| secret | `OPENCLAW_GATEWAY_TOKEN` | OpenClaw Gateway token (optional)     |
-| var    | `GRAFANA_HOSTNAME`       | `grafana.rutgerpronk.com`             |
-
-`GRAFANA_HOSTNAME` must resolve to the public IP that forwards to Traefik.
-
-## Proxmox API token
-
-Run once on a Proxmox host (once per host if they are not clustered):
+Proxmox token, once on a node (value is shown once → `PROXMOX_TOKEN_VALUE`):
 
 ```bash
 pveum user add prometheus@pve --comment "Prometheus monitoring (read-only)"
@@ -47,11 +14,4 @@ pveum acl modify / --users prometheus@pve --roles PVEAuditor
 pveum user token add prometheus@pve monitoring --privsep 0
 ```
 
-The token value is shown only once; store it as `PROXMOX_TOKEN_VALUE`.
-
-## Alerts
-
-Only `warning` and `critical` alerts reach Discord; `info` alerts are dropped.
-Related alerts are grouped into one message and repeated every 4 hours while
-still firing. `ProxmoxGuestStopped` only covers guests with "Start at boot"
-enabled, so templates and guests that are kept off on purpose stay quiet.
+Alerts: only `warning` and `critical` reach Discord, grouped and repeated every 4 h while firing. `ProxmoxGuestStopped` only covers guests with "Start at boot".

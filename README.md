@@ -1,12 +1,11 @@
 # Kubernetes Infrastructure
 
-This repository hosts all required resources in a kubernetes cluster to start deploying my applications. 
-Including the GitHub Actions for preview deployments and linting and such.
+Cluster add-ons (numbered dirs, applied in order by `.github/workflows/deploy-infrastructure.yaml`) and the reusable workflows apps deploy with.
 
 ## Application deployments
 
-Apps call the reusable `.github/workflows/deployments.yaml` workflow on pull requests and on pushes to `main`.
+Apps call `.github/workflows/deployments.yaml`:
 
-- Push to `main` → production on `<BASE_DOMAIN>`, OpenTofu workspace `production`.
-- Pull request → preview on `pr-<number>.<BASE_DOMAIN>`, OpenTofu workspace `pr-<number>`. Closing the PR destroys it.
-- Both use Let's Encrypt production certificates. To tell environments apart in an app's OpenTofu, use `terraform.workspace == "production"`.
+- Push to `main`: production on `<BASE_DOMAIN>`, OpenTofu workspace `production`.
+- Pull request: preview on `pr-<number>.<BASE_DOMAIN>`, workspace `pr-<number>`, destroyed when the PR closes.
+- Both get Let's Encrypt production certificates. Tell them apart with `terraform.workspace == "production"`.
