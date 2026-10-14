@@ -30,7 +30,7 @@ S3 credentials and anonymous read access are configured there.
 | var  | `SEAWEEDFS_IP` | `192.168.178.214`     |
 
 The hostname must have a DNS A-record pointing at the Traefik LoadBalancer IP
-(`TRAEFIK_IP` from `3-metallb-config`).
+(`192.168.178.230`, `k3s_traefik_ip` in homelab-infrastructure's k3s role).
 
 ## Uploading
 
