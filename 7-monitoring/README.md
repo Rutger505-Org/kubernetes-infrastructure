@@ -1,10 +1,10 @@
 # 7-monitoring
 
-Prometheus stack in `monitoring`, alerting to Discord: kube-prometheus-stack, Grafana on `GRAFANA_HOSTNAME` (Traefik, admin password), blackbox probes of `probe_targets` (down, slow, TLS expiring within 14 days), pve-exporter (read-only Proxmox token), and the OpenClaw Gateway's `/api/diagnostics/prometheus` on `openclaw_target` (off when `OPENCLAW_GATEWAY_TOKEN` is empty).
+Prometheus stack in `monitoring`, alerting to Discord: kube-prometheus-stack, Grafana LAN-only on MetalLB `grafana_load_balancer_ip` (`.231`, not port-forwarded) behind homelab Caddy as `grafana.homelab.rutgerpronk.com` (admin password, self-probed on its Service), blackbox probes of `probe_targets` (down, slow, TLS expiring within 14 days), pve-exporter (read-only Proxmox token), and the OpenClaw Gateway's `/api/diagnostics/prometheus` on `openclaw_target` (off when `OPENCLAW_GATEWAY_TOKEN` is empty).
 
 Prometheus can't report its own cluster going down; HetrixTools checks `rutgerpronk.com` externally. Optionally set `watchdog_ping_url` for a dead man's switch.
 
-CI config: secrets `DISCORD_WEBHOOK_URL`, `GRAFANA_ADMIN_PASSWORD`, `PROXMOX_TOKEN_VALUE`, `OPENCLAW_GATEWAY_TOKEN` (optional); var `GRAFANA_HOSTNAME`.
+CI config: secrets `DISCORD_WEBHOOK_URL`, `GRAFANA_ADMIN_PASSWORD`, `PROXMOX_TOKEN_VALUE`, `OPENCLAW_GATEWAY_TOKEN` (optional).
 
 Proxmox token, once on a node (value is shown once → `PROXMOX_TOKEN_VALUE`):
 
