@@ -2,3 +2,7 @@
 .terraform
 *.tfvars
 readonly.kubeconfig
+readonly.key
+readonly.csr
+readonly.crt
+server-ca.crt

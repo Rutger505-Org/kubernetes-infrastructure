@@ -16,32 +16,6 @@ provider "kubernetes" {
   config_path = "~/.kube/config"
 }
 
-resource "kubernetes_namespace" "readonly" {
-  metadata {
-    name = "read-only-access"
-  }
-}
-
-resource "kubernetes_service_account" "readonly" {
-  metadata {
-    name      = "readonly"
-    namespace = kubernetes_namespace.readonly.metadata[0].name
-  }
-}
-
-resource "kubernetes_secret" "readonly_token" {
-  metadata {
-    name      = "readonly-token"
-    namespace = kubernetes_namespace.readonly.metadata[0].name
-    annotations = {
-      "kubernetes.io/service-account.name" = kubernetes_service_account.readonly.metadata[0].name
-    }
-  }
-
-  type                           = "kubernetes.io/service-account-token"
-  wait_for_service_account_token = true
-}
-
 resource "kubernetes_cluster_role" "log_reader" {
   metadata {
     name = "log-reader"
@@ -68,6 +42,10 @@ resource "kubernetes_cluster_role" "log_reader" {
   }
 }
 
+# Bound to a user name instead of a service account: the user is the CN of a
+# client certificate signed by the k3s client CA. That CA survives a cluster
+# rebuild (K3S_CA_BUNDLE in homelab-infrastructure) and a user name has no
+# UID, so the kubeconfig keeps working after a reinstall. See the README.
 resource "kubernetes_cluster_role_binding" "readonly" {
   metadata {
     name = "readonly-log-reader"
@@ -80,8 +58,8 @@ resource "kubernetes_cluster_role_binding" "readonly" {
   }
 
   subject {
-    kind      = "ServiceAccount"
-    name      = kubernetes_service_account.readonly.metadata[0].name
-    namespace = kubernetes_service_account.readonly.metadata[0].namespace
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "User"
+    name      = "readonly"
   }
 }
