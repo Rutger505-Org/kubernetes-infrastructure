@@ -315,6 +315,26 @@ resource "helm_release" "kube_prometheus_stack" {
                 annotations = {
                   summary = "Proxmox storage {{ $labels.id }} is over 85% full"
                 }
+              },
+              {
+                alert  = "ProxmoxNodeMemoryHigh"
+                expr   = "max by (id) (pve_memory_usage_bytes{id=~\"node/.*\"}) / max by (id) (pve_memory_size_bytes{id=~\"node/.*\"}) > 0.9"
+                for    = "15m"
+                labels = { severity = "warning" }
+                annotations = {
+                  summary = "Proxmox node {{ $labels.id }} has used over 90% of its memory for 15m"
+                }
+              },
+              {
+                # LXC only: Proxmox reports a VM's memory from outside the guest,
+                # where page cache counts as used, so healthy VMs sit near 100%.
+                alert  = "ProxmoxContainerMemoryHigh"
+                expr   = "max by (id) (pve_memory_usage_bytes{id=~\"lxc/.*\"}) / max by (id) (pve_memory_size_bytes{id=~\"lxc/.*\"}) > 0.95"
+                for    = "15m"
+                labels = { severity = "warning" }
+                annotations = {
+                  summary = "Proxmox container {{ $labels.id }} has used over 95% of its memory for 15m"
+                }
               }
             ]
           },

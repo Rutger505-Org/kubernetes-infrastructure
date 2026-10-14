@@ -14,4 +14,4 @@ pveum acl modify / --users prometheus@pve --roles PVEAuditor
 pveum user token add prometheus@pve monitoring --privsep 0
 ```
 
-Alerts: only `warning` and `critical` reach Discord, grouped and repeated every 4 h while firing. `ProxmoxGuestStopped` only covers guests with "Start at boot".
+Alerts: only `warning` and `critical` reach Discord, grouped and repeated every 4 h while firing. `ProxmoxGuestStopped` only covers guests with "Start at boot". Memory alerts cover Proxmox nodes (>90%) and LXC containers (>95%), not VMs, whose host-side usage counts page cache.
