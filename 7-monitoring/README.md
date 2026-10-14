@@ -1,7 +1,7 @@
 # 7-monitoring — Monitoring and alerting
 
-Watches the k3s cluster, the Proxmox hosts and the public sites, and posts
-alerts to Discord.
+Watches the k3s cluster, the Proxmox hosts, the OpenClaw Gateway and the public
+sites, and posts alerts to Discord.
 
 ## What it creates
 
@@ -15,6 +15,10 @@ alerts to Discord.
   certificate expiring within 14 days).
 - **pve-exporter**: Proxmox host/guest/storage metrics over the API with a
   read-only token. Nothing here can change the hypervisor.
+- **OpenClaw**: scrapes the Gateway's `/api/diagnostics/prometheus` on
+  `openclaw_target` (the OpenClaw VM, `192.168.178.210:18789`), with alerts for
+  the Gateway being down, stuck sessions and critical memory pressure. Off when
+  `OPENCLAW_GATEWAY_TOKEN` is empty.
 
 Prometheus runs inside the cluster it watches, so it cannot report the cluster
 itself going down. That is left to an external check (HetrixTools on
@@ -28,6 +32,7 @@ always-firing Watchdog alert to a dead man's switch such as healthchecks.io.
 | secret | `DISCORD_WEBHOOK_URL`    | Discord channel webhook               |
 | secret | `GRAFANA_ADMIN_PASSWORD` | Grafana `admin` password              |
 | secret | `PROXMOX_TOKEN_VALUE`    | Secret of `prometheus@pve!monitoring` |
+| secret | `OPENCLAW_GATEWAY_TOKEN` | OpenClaw Gateway token (optional)     |
 | var    | `GRAFANA_HOSTNAME`       | `grafana.rutgerpronk.com`             |
 
 `GRAFANA_HOSTNAME` must resolve to the public IP that forwards to Traefik.
