@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+  # Re-applies every module, e.g. to undo manual changes in the cluster.
+  workflow_dispatch:
 
 # Queue instead of cancel: aborting a running apply can leave a module's state lock held.
 concurrency:
