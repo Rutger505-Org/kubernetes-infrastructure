@@ -50,10 +50,20 @@ jobs:
             exit 1
           fi
 
+          event="${{ github.event_name }}"
+          ref="${{ github.ref }}"
+
+          # A manual run has no PR to build a preview for, so it can only
+          # (re)deploy production, e.g. after changing a secret or variable.
+          if [ "$event" = "workflow_dispatch" ] && [ "$ref" != "refs/heads/main" ]; then
+            echo "::error::Manual deploys only target production; run the workflow from main"
+            exit 1
+          fi
+
           # On a pull_request "closed" event GitHub sets github.ref to the base
           # branch (refs/heads/main), not a PR ref, so this must also require
-          # the push event or a merged PR gets misclassified as production.
-          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+          # a push or manual run, or a merged PR gets misclassified as production.
+          if { [ "$event" = "push" ] || [ "$event" = "workflow_dispatch" ]; } && [ "$ref" = "refs/heads/main" ]; then
             environment=production
             is_production=true
             hostname="$BASE_DOMAIN"
