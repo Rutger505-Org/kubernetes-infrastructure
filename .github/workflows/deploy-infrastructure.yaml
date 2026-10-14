@@ -69,7 +69,6 @@ jobs:
         working-directory: ./3-metallb-config
         env:
           TF_VAR_ip_addresses: ${{ vars.METALLB_IP_ADDRESSES }}
-          TF_VAR_traefik_ip: ${{ vars.TRAEFIK_IP }}
         run: |
           tofu init
           tofu apply -input=false -auto-approve
@@ -93,13 +92,14 @@ jobs:
           fi
           tofu apply -input=false -auto-approve
 
-      - name: OpenTofu Apply Traefik HTTP/3
-        working-directory: ./6-traefik-http3
-        env:
-          TF_VAR_traefik_ip: ${{ vars.TRAEFIK_IP }}
+      # Traefik (HTTP/3, LoadBalancer IP) is configured by homelab-infrastructure's
+      # k3s role now. The HelmChartConfig must stay, so this only forgets the old
+      # 6-traefik-http3 state instead of running tofu destroy. Remove this step once
+      # it has run.
+      - name: Forget Traefik HTTP/3 state
         run: |
-          tofu init
-          tofu apply -input=false -auto-approve
+          kubectl -n default delete secret tfstate-default-traefik-http3 --ignore-not-found
+          kubectl -n default delete lease lock-tfstate-default-traefik-http3 --ignore-not-found
 
       - name: OpenTofu Apply Monitoring
         working-directory: ./7-monitoring
