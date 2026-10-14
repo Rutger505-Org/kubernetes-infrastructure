@@ -35,16 +35,21 @@ The Service should list a UDP port next to the TCP ones, and the response should
 
 ## Why the Service is patched by hand
 
-The chart is supposed to render the UDP port itself once `ports.websecure.http3.enabled`
-and `service.single` are set. In this cluster it does not: `helm get manifest traefik`
-shows a Service with only `web/TCP` and `websecure/TCP`, while `helm get values traefik --all`
-does contain `service.single: true` and the Deployment runs with
-`--entryPoints.websecure.http3`. Rendering the same chart version (`37.1.1+up37.1.0`) with the
-same values outside the cluster does produce `websecure-http3/UDP/443`.
+The chart *does* render `websecure-http3/UDP/443` (`helm template` shows it), but it never
+reaches the cluster intact: Kubernetes merges Service ports, and container ports, by **port
+number only**, ignoring the protocol. Helm's strategic-merge patch folds the UDP/443 entry
+into the TCP/443 one. That is why the Service and the pod never showed a UDP port.
 
-So the module adds that one port to the Service with `kubectl patch`, the same approach
-`3-metallb-config` already uses for the LoadBalancer IP. The patch:
+So the module writes the Service's full port list itself (`web`, `websecure`,
+`websecure-http3` -> numeric `8443`), with a merge patch that replaces the whole list.
+Allocated `nodePort`s are kept, and it is a no-op when the Service already matches.
 
-- is skipped entirely when the port is already present,
-- reads the current ports and appends to them, so allocated `nodePort`s are preserved,
-- re-runs on every deploy, which also repairs the port if a Traefik chart upgrade drops it.
+**It must run after helm-controller's upgrade.** On a fresh cluster the HelmChartConfig and
+the patch land in the same apply. The patch once ran a second before the helm upgrade,
+which then merged the chart's UDP entry over it and left `websecure/TCP/443` with
+`targetPort: websecure-http3`, a port the pod does not have: all HTTPS refused, port 80
+fine. The provisioner therefore waits until the traefik Deployment runs with
+`--entryPoints.websecure.http3` and is rolled out.
+
+It runs on every apply, so a later helm upgrade (for example a k3s version bump) that
+mangles the ports again is repaired by the next deploy or a `workflow_dispatch` run.

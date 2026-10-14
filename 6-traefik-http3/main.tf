@@ -62,44 +62,71 @@ resource "kubernetes_manifest" "traefik_http3" {
   }
 }
 
-# The chart's own UDP port never materialised in this cluster: the Service in the
-# deployed release only contains web/TCP and websecure/TCP, even though
-# "helm get values traefik" shows service.single = true and Traefik itself runs
-# with --entryPoints.websecure.http3. Rendering the same chart version
-# (37.1.1+up37.1.0) with the same values locally *does* produce the UDP port, so
-# the chart bundled on the node behaves differently than the published one.
+# The chart does render websecure-http3/UDP/443 (helm template shows it), but it
+# never survives into the cluster: Kubernetes merges Service ports, and container
+# ports, by port number only, ignoring the protocol. Helm's strategic-merge patch
+# therefore folds the UDP/443 entry into the TCP/443 one. That is why
+# "helm get manifest" looked fine while the Service and pod had no UDP port.
 #
-# So the UDP port is added to the Service here, in the same style as the
-# loadBalancerIP patch in 3-metallb-config.
+# So the Service's port list is set here, in full, with a JSON merge patch that
+# replaces the whole list instead of merging by port number.
 #
-# targetPort must be the *numeric* container port, not the named port
-# "websecure": a named targetPort only resolves to a containerPort with a
-# matching protocol, and the Traefik pod only declares websecure as TCP. With the
-# name, kube-proxy has nowhere to send the UDP packets and every QUIC handshake
-# times out while the Service still looks correct.
+# ORDER MATTERS. On the old cluster the HelmChartConfig had been rolled out long
+# before this patch existed. On a fresh cluster both land in the same apply: the
+# patch ran one second before helm-controller's upgrade, which then merged the
+# chart's UDP entry onto the patched list and left websecure/TCP/443 pointing at
+# targetPort "websecure-http3", a port the pod does not have, so all HTTPS was
+# refused. Hence: wait until helm-controller has rolled Traefik out with http3,
+# then write the list.
 #
-# The patch rebuilds the desired port list, keeps allocated nodePorts and is a
-# no-op once the Service already matches, so it can run on every deploy.
+# The list is written in full so the TCP ports are repaired too, not only the UDP
+# one. targetPort of the UDP port must be the *numeric* container port: a named
+# targetPort only resolves to a containerPort with a matching protocol, and the
+# pod only declares websecure as TCP. Allocated nodePorts are kept.
+#
+# Runs on every apply (no-op when the Service already matches), so a later helm
+# upgrade, e.g. a k3s version bump, that mangles the ports again is repaired by
+# the next deploy or a workflow_dispatch.
 resource "null_resource" "traefik_http3_service_port" {
   triggers = {
-    advertised_port = var.advertised_port
-    target_port     = var.websecure_container_port
+    always = timestamp()
   }
 
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
-    command     = <<-EOT
+    environment = {
+      DESIRED_PORTS = jsonencode([
+        { name = "web", port = 80, protocol = "TCP", targetPort = "web" },
+        { name = "websecure", port = 443, protocol = "TCP", targetPort = "websecure" },
+        { name = "websecure-http3", port = var.advertised_port, protocol = "UDP", targetPort = var.websecure_container_port },
+      ])
+    }
+    command = <<-EOT
       set -eu
+
+      # helm-controller applies the HelmChartConfig asynchronously in a job.
+      for i in $(seq 60); do
+        if kubectl get deployment traefik -n kube-system -o jsonpath='{.spec.template.spec.containers[0].args}' | grep -q 'entryPoints.websecure.http3'; then
+          break
+        fi
+        if [ "$i" = 60 ]; then
+          echo "helm-controller did not roll out http3 on the traefik Deployment within 5 minutes" >&2
+          exit 1
+        fi
+        sleep 5
+      done
+      kubectl rollout status deployment/traefik -n kube-system --timeout=5m
 
       SERVICE=$(kubectl get service traefik -n kube-system -o json)
 
-      DESIRED=$(echo "$SERVICE" | jq -c --argjson p ${var.advertised_port} --argjson t ${var.websecure_container_port} '[.spec.ports[] | select(.name != "websecure-http3")] + [{name: "websecure-http3", protocol: "UDP", port: $p, targetPort: $t} + ([.spec.ports[] | select(.name == "websecure-http3") | {nodePort}] | first // {})]')
+      DESIRED=$(echo "$SERVICE" | jq -c --argjson want "$DESIRED_PORTS" '.spec.ports as $cur | $want | map(. as $p | . + ([$cur[] | select(.port == $p.port and .protocol == $p.protocol) | {nodePort}] | first // {}))')
 
       if [ "$(echo "$SERVICE" | jq -cS '.spec.ports')" = "$(echo "$DESIRED" | jq -cS '.')" ]; then
-        echo "traefik service already exposes websecure-http3 correctly, nothing to do"
+        echo "traefik service ports already correct, nothing to do"
         exit 0
       fi
 
+      echo "fixing traefik service ports: $(echo "$SERVICE" | jq -c '.spec.ports') -> $DESIRED"
       kubectl patch service traefik -n kube-system --type=merge -p "{\"spec\":{\"ports\":$DESIRED}}"
     EOT
   }
