@@ -114,6 +114,9 @@ jobs:
 
       - name: OpenTofu Apply Pulse
         working-directory: ./8-pulse
+        env:
+          TF_VAR_pulse_admin_password: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+          TF_VAR_proxmox_token_value: ${{ secrets.PROXMOX_TOKEN_VALUE }}
         run: |
           tofu init
           tofu apply -input=false -auto-approve

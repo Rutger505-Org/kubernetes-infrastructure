@@ -4,10 +4,12 @@
 
 LAN only on MetalLB `pulse_load_balancer_ip` (`.232`, not port-forwarded) behind homelab Caddy as `pulse.homelab.rutgerpronk.com`. Pulse trusts forwarded headers from `trusted_proxy_cidrs` (the Caddy VM) only.
 
-No CI secrets: the Proxmox connection is set up in the UI and stored encrypted on the PVC (local-path, not backed up).
+Fully configured from code, no setup in the UI:
 
-First run:
+- Login: `admin` with `GRAFANA_ADMIN_PASSWORD` (same as Grafana). Set from the env, which skips Pulse's bootstrap-token setup.
+- Proxmox: the `pulse-configure-proxmox-<hash>` Job adds or rewrites the `homelab` connection through Pulse's API after every install, upgrade or config change. It uses 7-monitoring's `prometheus@pve!monitoring` token (`PROXMOX_TOKEN_VALUE`). The guest agent privileges Pulse needs for VM memory are granted in homelab-infrastructure's `proxmox/`.
+- VMs already get `qemu-guest-agent` from homelab-infrastructure.
 
-1. Get the bootstrap token (needs an admin kubeconfig, the read-only one can't exec): `kubectl -n pulse exec deploy/pulse -- /app/pulse bootstrap-token`.
-2. Open the UI, create the admin account, add each Proxmox node with the generated read-only setup script.
-3. VMs need `qemu-guest-agent` running and **Options → QEMU Guest Agent** on in Proxmox, otherwise Pulse falls back to the Proxmox numbers.
+Other settings changed in the UI (alerts, display) live on the PVC (local-path, not backed up). A Proxmox connection edited in the UI is overwritten on the next Job run.
+
+CI config: secrets `GRAFANA_ADMIN_PASSWORD`, `PROXMOX_TOKEN_VALUE` (both already used by 7-monitoring).
