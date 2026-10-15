@@ -111,3 +111,9 @@ jobs:
         run: |
           tofu init
           tofu apply -input=false -auto-approve
+
+      - name: OpenTofu Apply Pulse
+        working-directory: ./8-pulse
+        run: |
+          tofu init
+          tofu apply -input=false -auto-approve
