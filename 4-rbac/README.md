@@ -9,7 +9,7 @@ Read-only access for debugging (`readonly.kubeconfig`). The `log-reader` Cluster
 Once, by hand, never in CI (the client CA key stays on k3s-1, this repo is public). Needs SSH to k3s-1 and the admin kubeconfig.
 
 ```bash
-server=debian@192.168.178.201
+server=debian@192.168.1.201
 tls=/var/lib/rancher/k3s/server/tls
 
 openssl req -new -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes \
@@ -27,7 +27,7 @@ kubectl config view --raw --minify \
   -o jsonpath='{.clusters[0].cluster.certificate-authority-data}' | base64 -d > server-ca.crt
 
 k="kubectl config --kubeconfig readonly.kubeconfig"
-$k set-cluster homelab --server https://192.168.178.201:6443 \
+$k set-cluster homelab --server https://192.168.1.201:6443 \
   --certificate-authority server-ca.crt --embed-certs
 $k set-credentials readonly --client-certificate readonly.crt \
   --client-key readonly.key --embed-certs

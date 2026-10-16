@@ -9,7 +9,7 @@ variable "cdn_hostname" {
 }
 
 variable "seaweedfs_ip" {
-  description = "LAN address of the SeaweedFS VM (e.g. '192.168.178.214')"
+  description = "LAN address of the SeaweedFS VM (e.g. '192.168.1.214')"
   type        = string
 
   validation {

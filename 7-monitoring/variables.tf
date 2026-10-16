@@ -21,7 +21,7 @@ variable "openclaw_gateway_token" {
 variable "openclaw_target" {
   description = "OpenClaw gateway address as host:port"
   type        = string
-  default     = "192.168.178.210:18789"
+  default     = "192.168.1.210:18789"
 }
 
 variable "grafana_admin_password" {
@@ -39,7 +39,7 @@ variable "grafana_hostname" {
 variable "grafana_load_balancer_ip" {
   description = "MetalLB address of the Grafana Service, Caddy's upstream. Must not be port-forwarded by the router."
   type        = string
-  default     = "192.168.178.231"
+  default     = "192.168.1.231"
 }
 
 variable "proxmox_token_user" {
@@ -70,8 +70,8 @@ variable "proxmox_targets" {
   description = "Proxmox API endpoints to scrape, as host:port"
   type        = list(string)
   default = [
-    "192.168.178.200:8006",
-    "192.168.178.199:8006",
+    "192.168.1.200:8006",
+    "192.168.1.199:8006",
   ]
 }
 
