@@ -102,6 +102,10 @@ resource "helm_release" "pulse" {
       }
       extraEnv = [
         { name = "PULSE_PUBLIC_URL", value = "https://${var.pulse_hostname}" },
+        # local-path ignores fsGroup, so the volume root is root-owned and Pulse
+        # refuses it for its metrics history. It creates this subdirectory
+        # itself, owned by its own user.
+        { name = "PULSE_DATA_DIR", value = "/data/pulse" },
         { name = "PULSE_TRUSTED_PROXY_CIDRS", value = var.trusted_proxy_cidrs },
       ]
       resources = {
