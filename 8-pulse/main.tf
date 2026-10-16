@@ -93,7 +93,13 @@ resource "helm_release" "pulse" {
       podAnnotations = {
         "checksum/auth" = sha256(jsonencode(kubernetes_secret.pulse_auth.data))
       }
-      extraEnvFrom = [{ secretRef = { name = kubernetes_secret.pulse_auth.metadata[0].name } }]
+      # Not extraEnvFrom: chart 6.5.0 renders its items without the list dash,
+      # which the API server rejects. secretEnv maps each key with secretKeyRef.
+      secretEnv = {
+        create = false
+        name   = kubernetes_secret.pulse_auth.metadata[0].name
+        keys   = keys(kubernetes_secret.pulse_auth.data)
+      }
       extraEnv = [
         { name = "PULSE_PUBLIC_URL", value = "https://${var.pulse_hostname}" },
         { name = "PULSE_TRUSTED_PROXY_CIDRS", value = var.trusted_proxy_cidrs },
