@@ -18,7 +18,7 @@ provider "kubernetes" {
 
 # SeaweedFS: self-hosted, S3-compatible object storage used as a personal CDN
 # for sharing clips and hosting build artifacts. It runs on its own VM
-# (homelab-infrastructure, host seaweedfs-server) because the k3s nodes do not
+# (homelab-infrastructure, host seaweedfs) because the k3s nodes do not
 # have the disk for it. This module only puts it behind Traefik:
 #   https://cdn.rutgerpronk.com/<bucket>/<file>
 #
