@@ -11,19 +11,6 @@ variable "watchdog_ping_url" {
   default     = ""
 }
 
-variable "openclaw_gateway_token" {
-  description = "OpenClaw gateway token Prometheus scrapes /api/diagnostics/prometheus with. Empty disables the OpenClaw scrape job and alerts."
-  type        = string
-  sensitive   = true
-  default     = ""
-}
-
-variable "openclaw_target" {
-  description = "OpenClaw gateway address as host:port"
-  type        = string
-  default     = "192.168.178.210:18789"
-}
-
 variable "grafana_admin_password" {
   description = "Grafana admin password"
   type        = string
@@ -81,6 +68,10 @@ variable "probe_targets" {
   default = [
     "https://rutgerpronk.com",
     "https://cdn.rutgerpronk.com/healthz",
+    # ZeroClaw VM by IP: homelab names don't resolve on the nodes. Its firewall
+    # only lets the k3s nodes and Caddy in (homelab-infrastructure, role zeroclaw).
+    "http://192.168.178.218:42617/health",
+    "http://192.168.178.218:42618/someclaw/version",
   ]
 }
 
