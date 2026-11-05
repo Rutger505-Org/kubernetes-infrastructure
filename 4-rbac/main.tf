@@ -33,6 +33,22 @@ resource "kubernetes_cluster_role" "log_reader" {
     verbs      = ["get", "list", "watch"]
   }
 
+  # Read-only resource metrics for diagnosing node and pod memory/CPU usage.
+  rule {
+    api_groups = ["metrics.k8s.io"]
+    resources  = ["nodes", "pods"]
+    verbs      = ["get", "list", "watch"]
+  }
+
+  # Proxy only the in-cluster Prometheus Service to query metrics and inspect
+  # scrape targets; no access to secrets or other API proxy paths is granted.
+  rule {
+    api_groups     = [""]
+    resources      = ["services/proxy"]
+    resource_names = ["kube-prometheus-stack-prometheus"]
+    verbs          = ["get"]
+  }
+
   # Services and namespaces are needed to inspect LoadBalancer IPs and
   # mc-router's routing annotations while validating deployments.
   rule {

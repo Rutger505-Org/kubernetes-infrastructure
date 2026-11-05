@@ -1,6 +1,6 @@
 # 4-rbac
 
-Read-only access for debugging (`readonly.kubeconfig`). The `log-reader` ClusterRole grants `get/list/watch` on pods, logs, events, workloads, services, namespaces and PVCs in all namespaces, but no `secrets` or `configmaps`. Bound to the user `readonly`.
+Read-only access for debugging (`readonly.kubeconfig`). The `log-reader` ClusterRole grants `get/list/watch` on pods, logs, events, workloads, services, namespaces and PVCs in all namespaces, plus node/pod metrics and `get` proxy access to the Prometheus Service. No `secrets` or `configmaps`. Bound to the user `readonly`.
 
 `readonly` is the CN of a client certificate signed by the k3s client CA. homelab-infrastructure restores the same CAs on every rebuild (`K3S_CA_BUNDLE`), so the kubeconfig survives a reinstall; a service account token would not.
 
