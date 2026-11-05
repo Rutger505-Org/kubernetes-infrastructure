@@ -45,7 +45,9 @@ resource "kubernetes_cluster_role" "log_reader" {
   rule {
     api_groups     = [""]
     resources      = ["services/proxy"]
-    resource_names = ["kube-prometheus-stack-prometheus"]
+    # The API server's proxy route includes the port, and RBAC matches the
+    # service/<name>:<port> name as requested by kubectl get --raw.
+    resource_names = ["kube-prometheus-stack-prometheus:9090"]
     verbs          = ["get"]
   }
 
