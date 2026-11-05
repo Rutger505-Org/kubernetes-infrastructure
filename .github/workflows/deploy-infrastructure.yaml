@@ -111,11 +111,14 @@ jobs:
           tofu init
           tofu apply -input=false -auto-approve
 
-      - name: OpenTofu Apply Pulse
+      # Destroy Pulse before removing its module so Helm releases, namespace,
+      # PVC and state are all cleaned up deliberately. The PVC data will be
+      # permanently deleted by this run.
+      - name: OpenTofu Destroy Pulse
         working-directory: ./8-pulse
         env:
           TF_VAR_pulse_admin_password: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
           TF_VAR_proxmox_token_value: ${{ secrets.PROXMOX_TOKEN_VALUE }}
         run: |
           tofu init
-          tofu apply -input=false -auto-approve
+          tofu destroy -input=false -auto-approve
