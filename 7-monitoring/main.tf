@@ -242,6 +242,16 @@ resource "kubernetes_secret" "additional_scrape_configs" {
             replacement  = "blackbox-exporter-prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115"
           }
         ]
+      },
+      {
+        # The k3s nodes already run node exporter via kube-prometheus-stack.
+        # Scrape the VMs that run node_exporter in homelab-infrastructure.
+        job_name = "node-vms"
+        static_configs = [
+          {
+            targets = ["192.168.178.214:9100", "192.168.178.218:9100"]
+          }
+        ]
       }
     ]))
   }
@@ -526,7 +536,7 @@ resource "helm_release" "kube_prometheus_stack" {
       # Grafana 13 was OOMKilled at a 256Mi limit, reliably on login.
       resources = {
         requests = { cpu = "50m", memory = "256Mi" }
-        limits   = { memory = "512Mi" }
+        limits   = { memory = "768Mi" }
       }
 
       dashboardProviders = {
@@ -562,6 +572,9 @@ resource "helm_release" "kube_prometheus_stack" {
             gnetId     = 15757
             revision   = 43
             datasource = "Prometheus"
+          }
+          "memory-pressure" = {
+            json = file("${path.module}/dashboards/memory-pressure.json")
           }
         }
       }
