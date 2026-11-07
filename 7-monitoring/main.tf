@@ -558,12 +558,10 @@ resource "helm_release" "kube_prometheus_stack" {
 
       dashboards = {
         default = {
+          # Vendored from grafana.com 10347 rev 5: node panels labelled per node,
+          # plus real memory inside node-exporter VMs next to Proxmox's view.
           proxmox = {
-            gnetId   = 10347
-            revision = 5
-            # Its panels reference the datasource as {"uid": "${DS_PROMETHEUS}"};
-            # the string form only rewrites one-line "datasource": "...", entries.
-            datasource = [{ name = "DS_PROMETHEUS", value = "prometheus" }]
+            json = file("${path.module}/dashboards/proxmox.json")
           }
           blackbox = {
             gnetId     = 7587
