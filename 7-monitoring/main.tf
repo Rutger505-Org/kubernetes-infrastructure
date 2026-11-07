@@ -559,9 +559,11 @@ resource "helm_release" "kube_prometheus_stack" {
       dashboards = {
         default = {
           proxmox = {
-            gnetId     = 10347
-            revision   = 5
-            datasource = "Prometheus"
+            gnetId   = 10347
+            revision = 5
+            # Its panels reference the datasource as {"uid": "${DS_PROMETHEUS}"};
+            # the string form only rewrites one-line "datasource": "...", entries.
+            datasource = [{ name = "DS_PROMETHEUS", value = "prometheus" }]
           }
           blackbox = {
             gnetId     = 7587
