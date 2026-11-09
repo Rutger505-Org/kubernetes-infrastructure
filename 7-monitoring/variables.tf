@@ -4,6 +4,12 @@ variable "discord_webhook_url" {
   sensitive   = true
 }
 
+variable "discord_user_id" {
+  description = "Discord user ID that every alert message pings. Empty disables the ping."
+  type        = string
+  default     = ""
+}
+
 variable "watchdog_ping_url" {
   description = "Optional dead man's switch URL (HetrixTools Cron Job heartbeat) pinged every minute by the always-firing Watchdog alert. Empty disables it."
   type        = string

@@ -29,6 +29,7 @@ provider "helm" {
 locals {
   alertmanager_secrets_dir = "/etc/alertmanager/secrets/${kubernetes_secret.alertmanager_urls.metadata[0].name}"
   watchdog_enabled         = var.watchdog_ping_url != ""
+  discord_mention          = var.discord_user_id != "" ? "<@${var.discord_user_id}>" : ""
 }
 
 resource "kubernetes_namespace" "monitoring" {
@@ -467,6 +468,8 @@ resource "helm_release" "kube_prometheus_stack" {
             {
               receiver = "discord"
               matchers = ["severity =~ \"warning|critical\""]
+              # One Discord message per alert, like HetrixTools.
+              group_by = ["..."]
             }
           ]
         }
@@ -486,14 +489,14 @@ resource "helm_release" "kube_prometheus_stack" {
               {
                 webhook_url_file = "${local.alertmanager_secrets_dir}/discord-webhook-url"
                 send_resolved    = true
-                # One line per alert instead of the default dump of every
-                # label and annotation.
-                title   = <<-EOT
-                  {{ if eq .Status "firing" }}🔴{{ else }}✅{{ end }} {{ .CommonLabels.alertname }}{{ with .CommonLabels.namespace }} · {{ . }}{{ end }}
-                EOT
+                # Short message instead of the default dump of every label
+                # and annotation. Discord's embed colour already shows
+                # firing/resolved; content pings outside the embed.
+                content = local.discord_mention
+                title   = "{{ .CommonLabels.alertname }}{{ if eq .Status \"resolved\" }} - Resolved{{ end }}"
                 message = <<-EOT
-                  {{ range .Alerts.Firing }}🔴 {{ or .Labels.pod .Labels.instance .Labels.id .Labels.job "-" }}: {{ or .Annotations.summary .Annotations.description }}
-                  {{ end }}{{ range .Alerts.Resolved }}✅ {{ or .Labels.pod .Labels.instance .Labels.id .Labels.job "-" }}: {{ or .Annotations.summary .Annotations.description }}
+                  {{ range .Alerts }}{{ or .Annotations.summary .Annotations.description }}
+                  {{ if eq .Status "firing" }}{{ if .Annotations.summary }}{{ .Annotations.description }}{{ end }}{{ else }}Downtime: {{ printf "%.0f" (.EndsAt.Sub .StartsAt).Minutes }} min{{ end }}
                   {{ end }}
                 EOT
               }
