@@ -7,7 +7,7 @@ variable "discord_webhook_url" {
 variable "discord_user_id" {
   description = "Discord user ID that every alert message pings. Empty disables the ping."
   type        = string
-  default     = ""
+  default     = "349137952204652545"
 }
 
 variable "watchdog_ping_url" {
