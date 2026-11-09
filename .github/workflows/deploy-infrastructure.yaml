@@ -105,8 +105,10 @@ jobs:
         working-directory: ./7-monitoring
         env:
           TF_VAR_discord_webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          TF_VAR_discord_user_id: ${{ vars.DISCORD_USER_ID }}
           TF_VAR_grafana_admin_password: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
           TF_VAR_proxmox_token_value: ${{ secrets.PROXMOX_TOKEN_VALUE }}
+          TF_VAR_watchdog_ping_url: ${{ secrets.WATCHDOG_PING_URL }}
         run: |
           tofu init
           tofu apply -input=false -auto-approve

@@ -29,6 +29,7 @@ provider "helm" {
 locals {
   alertmanager_secrets_dir = "/etc/alertmanager/secrets/${kubernetes_secret.alertmanager_urls.metadata[0].name}"
   watchdog_enabled         = var.watchdog_ping_url != ""
+  discord_mention          = var.discord_user_id != "" ? "<@${var.discord_user_id}>" : ""
 }
 
 resource "kubernetes_namespace" "monitoring" {
@@ -467,6 +468,8 @@ resource "helm_release" "kube_prometheus_stack" {
             {
               receiver = "discord"
               matchers = ["severity =~ \"warning|critical\""]
+              # One Discord message per alert, like HetrixTools.
+              group_by = ["..."]
             }
           ]
         }
@@ -486,6 +489,16 @@ resource "helm_release" "kube_prometheus_stack" {
               {
                 webhook_url_file = "${local.alertmanager_secrets_dir}/discord-webhook-url"
                 send_resolved    = true
+                # Short message instead of the default dump of every label
+                # and annotation. Discord's embed colour already shows
+                # firing/resolved; content pings outside the embed.
+                content = local.discord_mention
+                title   = "{{ .CommonLabels.alertname }}{{ if eq .Status \"resolved\" }} - Resolved{{ end }}"
+                message = <<-EOT
+                  {{ range .Alerts }}{{ or .Annotations.summary .Annotations.description }}
+                  {{ if eq .Status "firing" }}{{ if .Annotations.summary }}{{ .Annotations.description }}{{ end }}{{ else }}Downtime: {{ printf "%.0f" (.EndsAt.Sub .StartsAt).Minutes }} min{{ end }}
+                  {{ end }}
+                EOT
               }
             ]
           },
@@ -525,6 +538,36 @@ resource "helm_release" "kube_prometheus_stack" {
           reporting_enabled = false
           check_for_updates = false
         }
+        # Alerts run through Prometheus and Alertmanager.
+        unified_alerting = { enabled = false }
+        # Unused apps Grafana preinstalls; each loads on start-up and login.
+        # Not preinstall_disabled: Grafana 13 preinstalls the Prometheus
+        # datasource too.
+        plugins = {
+          disable_plugins = join(",", [
+            "grafana-advisor-app",
+            "grafana-exploretraces-app",
+            "grafana-lokiexplore-app",
+            "grafana-metricsdrilldown-app",
+            "grafana-pyroscope-app",
+          ])
+        }
+      }
+
+      # Load dashboards and datasources once at start-up instead of two
+      # watching sidecars (~155Mi). A new grafana_dashboard ConfigMap outside
+      # this release needs a Grafana restart.
+      sidecar = {
+        dashboards = {
+          initDashboards = true
+          watchMethod    = "LIST"
+          skipReload     = true
+        }
+        datasources = {
+          initDatasources = true
+          watchMethod     = "LIST"
+          skipReload      = true
+        }
       }
 
       persistence = {
@@ -533,9 +576,10 @@ resource "helm_release" "kube_prometheus_stack" {
         storageClassName = var.storage_class
       }
 
-      # Grafana 13 was OOMKilled at a 256Mi limit, reliably on login.
+      # Grafana 13 was OOMKilled at a 256Mi limit, reliably on login, and at
+      # 512Mi. It uses ~350Mi RSS when idle.
       resources = {
-        requests = { cpu = "50m", memory = "256Mi" }
+        requests = { cpu = "50m", memory = "384Mi" }
         limits   = { memory = "768Mi" }
       }
 
