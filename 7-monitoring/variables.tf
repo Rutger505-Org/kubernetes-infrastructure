@@ -5,7 +5,7 @@ variable "discord_webhook_url" {
 }
 
 variable "watchdog_ping_url" {
-  description = "Optional dead man's switch URL (e.g. healthchecks.io) pinged every minute by the always-firing Watchdog alert. Empty disables it."
+  description = "Optional dead man's switch URL (HetrixTools Cron Job heartbeat) pinged every minute by the always-firing Watchdog alert. Empty disables it."
   type        = string
   sensitive   = true
   default     = ""
