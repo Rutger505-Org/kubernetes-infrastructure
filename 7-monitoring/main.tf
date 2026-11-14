@@ -390,7 +390,8 @@ resource "helm_release" "kube_prometheus_stack" {
 
     prometheus = {
       prometheusSpec = {
-        retention = var.prometheus_retention
+        retention     = var.prometheus_retention
+        retentionSize = var.prometheus_retention_size
         additionalScrapeConfigsSecret = {
           enabled = true
           name    = kubernetes_secret.additional_scrape_configs.metadata[0].name

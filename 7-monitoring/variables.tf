@@ -87,6 +87,12 @@ variable "prometheus_retention" {
   default     = "30d"
 }
 
+variable "prometheus_retention_size" {
+  description = "Max on-disk TSDB size; oldest blocks go first. local-path PVCs share the node's root disk and don't enforce prometheus_storage_size"
+  type        = string
+  default     = "6GB"
+}
+
 variable "prometheus_storage_size" {
   description = "Size of the Prometheus persistent volume"
   type        = string
