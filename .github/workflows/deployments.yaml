@@ -140,6 +140,12 @@ jobs:
       name: ${{ needs.configure.outputs.environment }}
       url: https://${{ needs.configure.outputs.hostname }}
 
+    env:
+      TF_VAR_application_name: ${{ needs.configure.outputs.application_name }}
+      TF_VAR_image: ${{ needs.configure.outputs.image }}
+      TF_VAR_hostname: ${{ needs.configure.outputs.hostname }}
+      TF_VAR_certificate_issuer: ${{ needs.configure.outputs.certificate_issuer }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -190,10 +196,6 @@ jobs:
       - name: OpenTofu Apply
         working-directory: ./deploy
         env:
-          TF_VAR_application_name: ${{ needs.configure.outputs.application_name }}
-          TF_VAR_image: ${{ needs.configure.outputs.image }}
-          TF_VAR_hostname: ${{ needs.configure.outputs.hostname }}
-          TF_VAR_certificate_issuer: ${{ needs.configure.outputs.certificate_issuer }}
           TF_VAR_config: ${{ steps.env.outputs.vars }}
           TF_VAR_secrets: ${{ steps.env.outputs.secrets }}
         run: tofu apply -input=false -auto-approve
@@ -207,6 +209,12 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: ${{ needs.configure.outputs.environment }}
+
+    env:
+      TF_VAR_application_name: ${{ needs.configure.outputs.application_name }}
+      TF_VAR_image: ${{ needs.configure.outputs.image }}
+      TF_VAR_hostname: ${{ needs.configure.outputs.hostname }}
+      TF_VAR_certificate_issuer: ${{ needs.configure.outputs.certificate_issuer }}
 
     steps:
       - name: Checkout repository
@@ -249,11 +257,6 @@ jobs:
       - name: OpenTofu Destroy
         if: steps.workspace.outputs.exists == 'true'
         working-directory: ./deploy
-        env:
-          TF_VAR_application_name: ${{ needs.configure.outputs.application_name }}
-          TF_VAR_image: ${{ needs.configure.outputs.image }}
-          TF_VAR_hostname: ${{ needs.configure.outputs.hostname }}
-          TF_VAR_certificate_issuer: ${{ needs.configure.outputs.certificate_issuer }}
         run: tofu apply -input=false -auto-approve -destroy
 
       - name: OpenTofu Delete Workspace
