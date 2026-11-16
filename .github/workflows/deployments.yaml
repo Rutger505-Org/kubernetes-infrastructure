@@ -179,6 +179,14 @@ jobs:
           echo "vars=$vars_json" >>"$GITHUB_OUTPUT"
           echo "secrets=$secrets_json" >>"$GITHUB_OUTPUT"
 
+      - name: OpenTofu Init
+        working-directory: ./deploy
+        run: tofu init -input=false
+
+      - name: OpenTofu Select Workspace
+        working-directory: ./deploy
+        run: tofu workspace select -or-create ${{ needs.configure.outputs.environment }}
+
       - name: OpenTofu Apply
         working-directory: ./deploy
         env:
@@ -188,10 +196,7 @@ jobs:
           TF_VAR_certificate_issuer: ${{ needs.configure.outputs.certificate_issuer }}
           TF_VAR_config: ${{ steps.env.outputs.vars }}
           TF_VAR_secrets: ${{ steps.env.outputs.secrets }}
-        run: |
-          tofu init
-          tofu workspace select -or-create ${{ needs.configure.outputs.environment }}
-          tofu apply -input=false -auto-approve
+        run: tofu apply -input=false -auto-approve
 
   destroy-pr-environment:
     if: github.event.action == 'closed'
@@ -226,16 +231,34 @@ jobs:
         with:
           kubeconfig: ${{ secrets.KUBECONFIG }}
 
+      - name: OpenTofu Init
+        working-directory: ./deploy
+        run: tofu init -input=false
+
+      - name: OpenTofu Select Workspace
+        id: workspace
+        working-directory: ./deploy
+        run: |
+          if tofu workspace select ${{ needs.configure.outputs.environment }}; then
+            echo "exists=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "Workspace not found, nothing to destroy"
+            echo "exists=false" >>"$GITHUB_OUTPUT"
+          fi
+
       - name: OpenTofu Destroy
+        if: steps.workspace.outputs.exists == 'true'
         working-directory: ./deploy
         env:
           TF_VAR_application_name: ${{ needs.configure.outputs.application_name }}
           TF_VAR_image: ${{ needs.configure.outputs.image }}
           TF_VAR_hostname: ${{ needs.configure.outputs.hostname }}
           TF_VAR_certificate_issuer: ${{ needs.configure.outputs.certificate_issuer }}
+        run: tofu apply -input=false -auto-approve -destroy
+
+      - name: OpenTofu Delete Workspace
+        if: steps.workspace.outputs.exists == 'true'
+        working-directory: ./deploy
         run: |
-          tofu init
-          tofu workspace select ${{ needs.configure.outputs.environment }} || exit 0
-          tofu apply -input=false -auto-approve -destroy
           tofu workspace select default
           tofu workspace delete ${{ needs.configure.outputs.environment }}
